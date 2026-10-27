@@ -125,3 +125,49 @@ img, svg, video {
   .sidebar, .navbar, .topbar { display: none !important; }
   .main-content { margin: 0 !important; width: 100% !important; }
 }
+
+
+/* ===== Visibility + readability pass ===== */
+body, .main-content, .content-wrapper {
+  color: #0f172a !important;
+  font-size: 15px !important;
+}
+.sidebar, #mainSidebar {
+  font-size: 14px !important;
+}
+.sb-link, #mainSidebar a {
+  color: rgba(248,250,252,.92) !important;
+}
+.sb-sub .sb-link { color: rgba(248,250,252,.88) !important; }
+.card, .stat-card, .table {
+  color: #0f172a;
+}
+.table th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  font-weight: 700;
+}
+.table td { color: #1e293b; }
+h1,h2,h3,h4,h5, .page-title {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+.text-muted { color: #64748b !important; }
+
+/* Theme modal buttons */
+.theme-pick-btn:hover {
+  border-color: var(--pharmacy-primary, #0d9488) !important;
+  box-shadow: 0 0 0 3px rgba(13,148,136,.2);
+}
+
+/* Prevent submenu flash: only hide when truly collapsed */
+#mainSidebar.sb-col .sb-txt,
+#mainSidebar.sb-col .sb-section,
+#mainSidebar.sb-col .sb-arr { opacity: 0; width: 0; overflow: hidden; }
+
+/* Readable form labels */
+label, .form-label {
+  font-weight: 600 !important;
+  color: #334155 !important;
+  margin-bottom: .35rem;
+}
