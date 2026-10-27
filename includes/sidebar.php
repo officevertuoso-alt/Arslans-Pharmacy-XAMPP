@@ -287,7 +287,12 @@ if (!empty($_sbSettings['dark_mode'])) {
         <!-- Mini brand (collapsed / icon-rail mode) -->
         <div id="sbBrandMini"><?php echo $_sbLogoHtml; ?></div>
 
-        <!-- Controls: lock + collapse buttons -->
+        <!-- Controls: lock + collapse + theme -->
+            <button type="button" id="sbThemeBtn" class="sb-ctrl-btn" title="Change theme" aria-label="Change theme"
+                    data-bs-toggle="modal" data-bs-target="#globalThemeModal">
+                <i class="fas fa-palette"></i>
+            </button>
+
         <div id="sbCtrlRow">
             <button id="sbLockBtn" class="sb-ctrl-btn" title="Lock sidebar open" aria-label="Lock sidebar">
                 <i id="sbLockIco" class="fas fa-lock-open"></i>
@@ -1112,7 +1117,10 @@ body.sb-col-body .main-content { margin-left: var(--sb-w-mini); }
 #mainSidebar.sb-col #sbBrandFull,
 #mainSidebar.sb-col #sbUserFull,
 #mainSidebar.sb-col #sbFooter,
-#mainSidebar.sb-col .collapse    { display: none !important; }
+/* Collapsed: hide nested panels until user expands sidebar via toggle click */
+#mainSidebar.sb-col .collapse { display: none !important; }
+/* After expand-from-toggle, allow collapses */
+#mainSidebar:not(.sb-col) .collapse.show { display: block !important; }
 
 /* Show mini elements */
 #mainSidebar.sb-col #sbBrandMini,
@@ -1181,6 +1189,24 @@ body.sb-col-body .main-content { margin-left: var(--sb-w-mini); }
 }
 </style>
 
+
+
+<!-- Global Theme Modal -->
+<div class="modal fade" id="globalThemeModal" tabindex="-1" aria-labelledby="globalThemeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius:14px;overflow:hidden;">
+      <div class="modal-header" style="background:var(--pharmacy-primary,#0d9488);color:#fff;">
+        <h5 class="modal-title" id="globalThemeModalLabel"><i class="fas fa-palette me-2"></i>Choose Theme</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="background:#f8fafc;">
+        <p class="text-muted small mb-3">Applies on <strong>all pages</strong> and is saved to your account/session.</p>
+        <div id="globalThemeGrid" class="row g-2"></div>
+        <div id="globalThemeStatus" class="small mt-2 text-success" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      PHASE 4 — SIDEBAR JS
@@ -1273,6 +1299,16 @@ body.sb-col-body .main-content { margin-left: var(--sb-w-mini); }
     COL.addEventListener('click', function (e) {
         e.stopPropagation();
         collapsed = !collapsed;
+        // Closing collapses: hide any open submenus so they do not flash
+        if (collapsed) {
+            SB.querySelectorAll('.collapse.show').forEach(function (c) {
+                c.classList.remove('show');
+            });
+            SB.querySelectorAll('.sb-toggle.open').forEach(function (a) {
+                a.classList.remove('open');
+                a.setAttribute('aria-expanded', 'false');
+            });
+        }
         save();
         render(true);
     });
@@ -1284,6 +1320,128 @@ body.sb-col-body .main-content { margin-left: var(--sb-w-mini); }
         save();
         render(true);
     });
+
+    // ── FIX: submenu while collapsed — expand sidebar first, then open panel ─
+    SB.querySelectorAll('a.sb-toggle[data-bs-toggle="collapse"]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            if (!collapsed) return; // normal Bootstrap behaviour
+            e.preventDefault();
+            e.stopPropagation();
+            var targetSel = link.getAttribute('href') || link.getAttribute('data-bs-target');
+            collapsed = false;
+            save();
+            render(true);
+            setTimeout(function () {
+                var panel = targetSel ? document.querySelector(targetSel) : null;
+                if (panel) {
+                    panel.classList.add('show');
+                    link.classList.add('open');
+                    link.setAttribute('aria-expanded', 'true');
+                    try { panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (err) {}
+                }
+            }, 220);
+        }, true);
+    });
+
+    // ── Theme modal: build swatches + apply ────────────────────────────────
+    (function setupThemeModal() {
+        var grid = document.getElementById('globalThemeGrid');
+        if (!grid) return;
+        var themes = [
+            {id:'default', name:'Default Blue', c:'#3b82f6'},
+            {id:'light_green_medical', name:'Medical Green', c:'#0d9488'},
+            {id:'pharmacy_teal', name:'Pharmacy Teal', c:'#14b8a6'},
+            {id:'dark_professional', name:'Dark Pro', c:'#1e293b'},
+            {id:'soft_purple', name:'Soft Purple', c:'#8b5cf6'},
+            {id:'warm_orange', name:'Warm Orange', c:'#f97316'},
+            {id:'clean_gray', name:'Clean Gray', c:'#64748b'},
+            {id:'clinical_cyan', name:'Clinical Cyan', c:'#06b6d4'}
+        ];
+        // Prefer cards already on page from theme_switcher
+        var existing = document.querySelectorAll('[data-theme-id], [data-theme-swatch]');
+        if (existing.length) {
+            grid.innerHTML = '';
+            existing.forEach(function (el) {
+                var id = el.getAttribute('data-theme-id') || el.getAttribute('data-theme-swatch');
+                if (!id) return;
+                var name = (el.getAttribute('title') || el.textContent || id).trim().slice(0, 40);
+                var col = el.style.background || '#0d9488';
+                var d = document.createElement('div');
+                d.className = 'col-6 col-md-4 col-lg-3';
+                d.innerHTML = '<button type="button" class="btn w-100 theme-pick-btn" data-tid="'+id+'" style="border:2px solid #e2e8f0;border-radius:12px;padding:12px;text-align:left;background:#fff;">'
+                    + '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:'+col+';vertical-align:middle;margin-right:8px;"></span>'
+                    + '<span style="font-weight:600;font-size:.85rem;">'+name+'</span></button>';
+                grid.appendChild(d);
+            });
+        } else {
+            grid.innerHTML = themes.map(function (th) {
+                return '<div class="col-6 col-md-4 col-lg-3"><button type="button" class="btn w-100 theme-pick-btn" data-tid="'+th.id+'" style="border:2px solid #e2e8f0;border-radius:12px;padding:12px;text-align:left;background:#fff;">'
+                    + '<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:'+th.c+';vertical-align:middle;margin-right:8px;"></span>'
+                    + '<span style="font-weight:600;font-size:.85rem;">'+th.name+'</span></button></div>';
+            }).join('');
+        }
+
+        function getBase() {
+            if (window.BASE_URL) return String(window.BASE_URL).replace(/\/?$/, '/');
+            var m = document.querySelector('meta[name="base-url"]');
+            if (m && m.content) return m.content.replace(/\/?$/, '/');
+            var match = location.pathname.match(/^(.*?\/pharmacy_software\/)/i);
+            return match ? (location.origin + match[1]) : (location.origin + '/');
+        }
+
+        function applyThemeId(themeId) {
+            var st = document.getElementById('globalThemeStatus');
+            if (st) { st.style.display = 'block'; st.textContent = 'Applying…'; }
+            var body = new URLSearchParams();
+            body.set('theme_id', themeId);
+            fetch(getBase() + 'ajax/apply_theme.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data || !data.success) {
+                    if (st) st.textContent = (data && data.message) ? data.message : 'Failed';
+                    return;
+                }
+                if (data.css_vars) {
+                    var old = document.getElementById('theme-engine-vars');
+                    if (old) old.remove();
+                    var wrap = document.createElement('div');
+                    wrap.innerHTML = data.css_vars;
+                    var style = wrap.querySelector('style') || wrap.firstChild;
+                    if (style) document.head.appendChild(style);
+                }
+                document.body.setAttribute('data-active-theme', themeId);
+                if (data.is_dark) document.body.classList.add('dark-mode');
+                else document.body.classList.remove('dark-mode');
+                localStorage.setItem('pharm_theme_id', themeId);
+                if (st) st.textContent = 'Theme saved: ' + (data.theme_name || themeId);
+                // keep modal open briefly then close
+                setTimeout(function () {
+                    var modalEl = document.getElementById('globalThemeModal');
+                    if (modalEl && window.bootstrap) {
+                        var inst = bootstrap.Modal.getInstance(modalEl);
+                        if (inst) inst.hide();
+                    }
+                }, 600);
+            }).catch(function (err) {
+                if (st) st.textContent = 'Network error applying theme';
+            });
+        }
+
+        grid.addEventListener('click', function (e) {
+            var btn = e.target.closest('[data-tid]');
+            if (!btn) return;
+            applyThemeId(btn.getAttribute('data-tid'));
+        });
+
+        // Also expose for theme_switcher onclick="applyTheme(...)"
+        window.applyTheme = function (id) { applyThemeId(id); };
+        if (typeof window.applyThemeAjax !== 'function') {
+            window.applyThemeAjax = window.applyTheme;
+        }
+    })();
 
     // ── Initial paint (no transition flash) ───────────────────────────────
     render(false);
