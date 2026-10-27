@@ -3,3 +3,4 @@ logs/
 *.log
 uploads/backups/
 .DS_Store
+uploads/backups/
