@@ -288,6 +288,8 @@ if (!empty($pageTitle)) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo defined('BASE_URL') ? BASE_URL : '/'; ?>js/script.js"></script>
     <script src="<?php echo defined('BASE_URL') ? BASE_URL : '/'; ?>js/notify.js"></script>
+    <script src="<?php echo defined('BASE_URL') ? BASE_URL : '/'; ?>js/theme-picker.js"></script>
+    <script>window.BASE_URL = window.BASE_URL || "<?php echo addslashes(defined('BASE_URL')?BASE_URL:'/'); ?>";</script>
     <?php endif; ?>
 
     <!-- ═══ Global Company Config for JavaScript ═══ -->
