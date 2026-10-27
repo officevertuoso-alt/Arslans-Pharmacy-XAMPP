@@ -279,6 +279,7 @@ if (!empty($pageTitle)) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- PharmaCare Global Stylesheet -->
     <link rel="stylesheet" href="<?php echo defined('BASE_URL') ? BASE_URL : '/'; ?>css/style.css">
+<link rel="stylesheet" href="<?php echo defined('CSS_URL') ? CSS_URL : BASE_URL . 'css/'; ?>ui_consistency.css">
     <!-- Phase 9: Universal Table System -->
     <link rel="stylesheet" href="<?php echo defined('BASE_URL') ? BASE_URL : '/'; ?>css/universal_table.css">
     <!-- Core JS (loaded once via page_head, defer to not block render) -->
