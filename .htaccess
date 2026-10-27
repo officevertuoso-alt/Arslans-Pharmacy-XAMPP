@@ -1,0 +1,63 @@
+# Arslan's Pharmacy ERP — Root .htaccess
+# Version: 7.1 — Fixed (removed duplicate + unguarded Header directives)
+
+# ── Enable mod_headers for security headers ──────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set X-Permitted-Cross-Domain-Policies "none"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# ── Basic access ──────────────────────────────────────────────────────────────
+Require all granted
+Allow from all
+
+# ── Block sensitive files ─────────────────────────────────────────────────────
+<FilesMatch "\.(sql|bak|log|env|gz\.meta\.json)$">
+    Require all denied
+</FilesMatch>
+
+<Files ".env*">
+    Require all denied
+</Files>
+
+# Block development/debug scripts
+<FilesMatch "^(hash_pass|test_db|restore_after_edit)\.php$">
+    Require all denied
+</FilesMatch>
+
+# Block zip archives in web root
+<FilesMatch "\.zip$">
+    Require all denied
+</FilesMatch>
+
+# ── Block install.php in production ──────────────────────────────────────────
+<Files "install.php">
+    Require all denied
+</Files>
+
+# ── URL redirects ─────────────────────────────────────────────────────────────
+RedirectMatch 301 ^/auth/forgot-password\.php$ /auth/forgot_password.php
+RedirectMatch 301 ^/settings/theme_editor_v2\.php$ /settings/theme_editor_v3.php
+
+# Phase 28 Security Hardening
+# Disable server signature
+ServerSignature Off
+
+# Prevent access to sensitive files
+<FilesMatch "\.(env|sql|log|gz|bak|swp|orig)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Block PHP execution in uploads directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^uploads/.*\.(php|phtml|php3|php4|php5|phar)$ - [F,NC,L]
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes

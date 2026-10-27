@@ -1,0 +1,14 @@
+{
+    "type": "config",
+    "tables": [
+        "company_settings",
+        "users",
+        "user_permissions",
+        "permission_presets",
+        "system_resets"
+    ],
+    "total_rows": 46,
+    "md5": "87c468373e157b6d2e6906f273c241bd",
+    "created_at": "2026-05-31 06:28:20",
+    "created_by": "admin"
+}

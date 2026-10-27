@@ -1,0 +1,153 @@
+/**
+ * PHARMACY ERP — PHASE 9: Universal Table System
+ * FILE: css/universal_table.css
+ * Theme-compatible: uses CSS variables from theme engine
+ */
+
+/* ── Wrapper ── */
+.ut-wrapper { position: relative; }
+
+/* ── Toolbar ── */
+.ut-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 0 10px 0;
+}
+.ut-toolbar-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.ut-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+}
+.ut-info-row { min-height: 20px; }
+.ut-info-text {
+    font-size: 12px;
+    color: var(--pharmacy-text-muted, #6c757d);
+}
+
+/* ── Search ── */
+.ut-search-wrap {
+    position: relative;
+    min-width: 200px;
+    max-width: 300px;
+    flex: 1 1 200px;
+}
+.ut-search-icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pharmacy-text-muted, #6c757d);
+    font-size: 12px;
+    pointer-events: none;
+}
+.ut-search-input {
+    width: 100%;
+    padding: 6px 10px 6px 28px;
+    border: 1px solid var(--pharmacy-border, #dee2e6);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--pharmacy-card-bg, #fff);
+    color: var(--pharmacy-text, #212529);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.ut-search-input:focus {
+    border-color: var(--pharmacy-primary, #0d6efd);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pharmacy-primary, #0d6efd) 15%, transparent);
+}
+
+/* ── Toolbar Buttons ── */
+.ut-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+}
+.ut-btn-excel {
+    background: #198754;
+    color: #fff;
+    border-color: #198754;
+}
+.ut-btn-excel:hover { background: #157347; border-color: #146c43; }
+.ut-btn-pdf {
+    background: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
+}
+.ut-btn-pdf:hover { background: #bb2d3b; border-color: #b02a37; }
+.ut-btn-print {
+    background: var(--pharmacy-card-bg, #fff);
+    color: var(--pharmacy-text, #212529);
+    border-color: var(--pharmacy-border, #dee2e6);
+}
+.ut-btn-print:hover {
+    background: var(--pharmacy-table-th, #f8f9fa);
+    border-color: #adb5bd;
+}
+
+/* ── Per-page selector ── */
+.ut-perpage-wrap {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--pharmacy-text-muted, #6c757d);
+}
+.ut-perpage-select {
+    padding: 4px 6px;
+    font-size: 12px;
+    border: 1px solid var(--pharmacy-border, #dee2e6);
+    border-radius: 5px;
+    background: var(--pharmacy-card-bg, #fff);
+    color: var(--pharmacy-text, #212529);
+    cursor: pointer;
+}
+
+/* ── Sort indicators on th ── */
+thead th.ut-sort-asc::after  { content: ' ↑'; font-size: 10px; opacity: .7; }
+thead th.ut-sort-desc::after { content: ' ↓'; font-size: 10px; opacity: .7; }
+thead th[style*="cursor: pointer"]:hover { opacity: .85; }
+
+/* ── Empty state ── */
+.ut-empty-cell {
+    text-align: center;
+    padding: 40px !important;
+    color: var(--pharmacy-text-muted, #6c757d);
+    font-size: 14px;
+    line-height: 2;
+}
+
+/* ── Pagination bar ── */
+.ut-pagination-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 0 4px;
+}
+
+/* ── Print: hide toolbar and pagination ── */
+@media print {
+    .no-print, .ut-toolbar, .ut-pagination-bar { display: none !important; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 575px) {
+    .ut-toolbar-row { flex-direction: column; align-items: stretch; }
+    .ut-toolbar-actions { margin-left: 0; }
+    .ut-search-wrap { max-width: 100%; }
+}

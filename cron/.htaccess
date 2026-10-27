@@ -1,0 +1,6 @@
+# Phase 28: Block all web access to cron scripts
+Order deny,allow
+Deny from all
+<FilesMatch "\.txt$">
+    Allow from all
+</FilesMatch>

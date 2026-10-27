@@ -1,0 +1,1126 @@
+/* ══════════════════════════════════════════════
+   PHARMACY MANAGEMENT SYSTEM — GLOBAL STYLESHEET
+   File: css/style.css
+   All colors via CSS variables — never hardcoded
+   Version: 6.0 — Theme-aware, dark-mode ready
+   Step 1: Full UI/UX Enhancement Applied
+══════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────
+   PAGE LOAD ANIMATION
+───────────────────────────────────────────── */
+:root {
+  --danger-color:  #dc3545;
+  --warning-color: #f59e0b;
+  --success-color: #28a745;
+  --info-color:    #17a2b8;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+.main-content {
+    animation: fadeInPage 0.28s ease;
+}
+
+/* Legacy fade-in helper class */
+.fade-in { animation: fadeIn 0.5s ease-in; }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ─────────────────────────────────────────────
+   PAGE LOADER BAR (top progress bar)
+───────────────────────────────────────────── */
+#page-loader {
+    position   : fixed;
+    top        : 0;
+    left       : 0;
+    width      : 0;
+    height     : 3px;
+    background : var(--pharmacy-primary, #0d6efd);
+    z-index    : 9999;
+    transition : width 0.3s ease, opacity 0.4s ease;
+}
+
+/* ─────────────────────────────────────────────
+   BODY & LAYOUT
+───────────────────────────────────────────── */
+body {
+    font-family : var(--font-family, 'Segoe UI', system-ui, sans-serif);
+    font-size   : var(--font-size-base, 14px);
+    background  : var(--pharmacy-body-bg, #f0f2f5);
+    color       : var(--pharmacy-text, #444);
+    min-height  : 100vh;
+    transition  : background .3s ease, color .3s ease;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE WRAPPER
+───────────────────────────────────────────── */
+.page-wrapper {
+    display    : flex;
+    min-height : 100vh;
+}
+
+.main-content {
+    margin-left : var(--sb-w, 260px);
+    min-height  : 100vh;
+    transition  : margin-left .25s ease;
+    flex        : 1;
+    overflow-x  : hidden;
+}
+
+@media (max-width: 991.98px) {
+    .main-content { margin-left: 0 !important; }
+}
+
+/* ─────────────────────────────────────────────
+   NAVBAR
+───────────────────────────────────────────── */
+.top-navbar {
+    position      : sticky;
+    top           : 0;
+    z-index       : 99;
+    background    : var(--pharmacy-navbar-bg, #fff);
+    border-bottom : 1px solid var(--pharmacy-navbar-border, #e9ecef);
+    transition    : background .3s, border-color .3s, margin-left .25s;
+    box-shadow    : 0 1px 4px rgba(0,0,0,.06);
+}
+
+/* ─────────────────────────────────────────────
+   BREADCRUMB
+───────────────────────────────────────────── */
+.page-breadcrumb {
+    display       : flex;
+    align-items   : center;
+    gap           : 6px;
+    padding       : 10px 24px;
+    background    : var(--pharmacy-card-bg);
+    border-bottom : 1px solid var(--pharmacy-border);
+    font-size     : .82rem;
+    position      : sticky;
+    top           : var(--navbar-height, 57px);
+    z-index       : 98;
+    transition    : margin-left .25s ease;
+    box-shadow    : 0 1px 4px rgba(0,0,0,.04);
+}
+.page-breadcrumb a {
+    color           : var(--pharmacy-primary);
+    text-decoration : none;
+    transition      : opacity .15s;
+}
+.page-breadcrumb a:hover { opacity: .8; text-decoration: underline; }
+.page-breadcrumb .separator { color: var(--pharmacy-text); opacity: .4; font-size: .7rem; }
+.page-breadcrumb .current   { color: var(--pharmacy-heading); font-weight: 600; }
+.page-breadcrumb .bc-nav-btn {
+    background      : var(--pharmacy-input-bg, #fff);
+    border          : 1px solid var(--pharmacy-border);
+    color           : var(--pharmacy-text);
+    border-radius   : 6px;
+    width           : 28px;
+    height          : 28px;
+    display         : inline-flex;
+    align-items     : center;
+    justify-content : center;
+    cursor          : pointer;
+    font-size       : .8rem;
+    transition      : background .15s, color .15s, border-color .15s;
+    text-decoration : none;
+    flex-shrink     : 0;
+}
+.page-breadcrumb .bc-nav-btn:hover {
+    background   : var(--pharmacy-primary);
+    color        : #fff;
+    border-color : var(--pharmacy-primary);
+}
+.page-breadcrumb .bc-nav-btn:disabled,
+.page-breadcrumb .bc-nav-btn.disabled {
+    opacity        : .4;
+    cursor         : default;
+    pointer-events : none;
+}
+
+/* ─────────────────────────────────────────────
+   CARDS
+───────────────────────────────────────────── */
+.card {
+    border        : 1px solid var(--pharmacy-border) !important;
+    border-radius : var(--card-border-radius, 12px) !important;
+    background    : var(--pharmacy-card-bg) !important;
+    box-shadow    : 0 2px 12px rgba(0,0,0,.07);
+    transition    : transform .2s ease, box-shadow .2s ease, background .3s ease, border-color .3s ease;
+}
+.card:hover {
+    transform  : translateY(-3px);
+    box-shadow : 0 6px 24px rgba(0,0,0,.13);
+}
+.card-header {
+    background    : color-mix(in srgb, var(--pharmacy-table-th) 100%, transparent) !important;
+    border-color  : var(--pharmacy-border) !important;
+    border-bottom : 2px solid var(--pharmacy-border) !important;
+    font-weight   : 600;
+    color         : var(--pharmacy-heading) !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION HEADINGS
+───────────────────────────────────────────── */
+.section-title,
+.card-title,
+h1, h2, h3, h4, h5, h6 {
+    color: var(--pharmacy-heading) !important;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE CONTENT AREA
+───────────────────────────────────────────── */
+.content-area {
+    padding: 24px;
+}
+@media (max-width: 576px) {
+    .content-area { padding: 16px; }
+}
+
+/* ─────────────────────────────────────────────
+   STAT CARDS (Dashboard)
+───────────────────────────────────────────── */
+.stat-card {
+    border-radius : var(--card-border-radius, 12px);
+    border        : 1px solid var(--pharmacy-border);
+    border-left   : 4px solid var(--pharmacy-primary);
+    background    : var(--pharmacy-card-bg);
+    box-shadow    : 0 2px 12px rgba(0,0,0,.07);
+    transition    : transform .2s ease, box-shadow .2s ease, background .3s ease;
+    padding       : 20px 24px;
+    position      : relative;
+    overflow      : hidden;
+}
+.stat-card:hover {
+    transform  : translateY(-3px);
+    box-shadow : 0 8px 28px rgba(0,0,0,.13);
+}
+.stat-card .stat-value {
+    font-size   : 1.8rem;
+    font-weight : 700;
+    color       : var(--pharmacy-heading);
+    line-height : 1.1;
+    transition  : color .3s;
+}
+.stat-card .stat-label {
+    font-size      : 0.78rem;
+    color          : color-mix(in srgb, var(--pharmacy-text) 65%, transparent);
+    text-transform : uppercase;
+    letter-spacing : 0.5px;
+    margin-top     : 4px;
+}
+.stat-card .stat-icon {
+    font-size : 2.6rem;
+    opacity   : 0.12;
+    position  : absolute;
+    right     : 18px;
+    top       : 50%;
+    transform : translateY(-50%);
+    color     : var(--pharmacy-primary);
+}
+.stat-card .stat-trend {
+    font-size   : 0.75rem;
+    margin-top  : 6px;
+    font-weight : 600;
+}
+.stat-card .stat-trend.up   { color: var(--pharmacy-accent, #28a745); }
+.stat-card .stat-trend.down { color: var(--danger-color, #dc3545); }
+
+/* Accent variants for left border */
+.stat-card.accent-success { border-left-color: var(--pharmacy-accent, #28a745); }
+.stat-card.accent-warning { border-left-color: #f59e0b; }
+.stat-card.accent-danger  { border-left-color: #ef4444; }
+.stat-card.accent-info    { border-left-color: #3b82f6; }
+.stat-card.accent-purple  { border-left-color: #8b5cf6; }
+
+/* ─────────────────────────────────────────────
+   DASHBOARD CARD COMPONENT — Phase 7
+   Semantic accent modifiers via stat-card--{name}
+   All values use CSS vars — zero hardcoded colours.
+───────────────────────────────────────────── */
+
+/* Shared inner body spacing */
+.stat-card__body {
+    flex      : 1 1 0;
+    min-width : 0;
+}
+
+/* Semantic border-left accent colours */
+.stat-card--primary { border-left-color: var(--pharmacy-primary, #3b82f6); }
+.stat-card--success { border-left-color: var(--pharmacy-accent,  #28a745); }
+.stat-card--warning { border-left-color: #ffc107; }
+.stat-card--danger  { border-left-color: var(--danger-color, #dc3545); }
+.stat-card--info    { border-left-color: #17a2b8; }
+.stat-card--purple  { border-left-color: #6f42c1; }
+.stat-card--orange  { border-left-color: #fd7e14; }
+.stat-card--teal    { border-left-color: #20c997; }
+.stat-card--dark    { border-left-color: var(--pharmacy-accent, #343a40); }
+
+/* Icon circle — standardised size, shape, colour via inline style */
+.stat-icon-circle {
+    width           : 52px;
+    height          : 52px;
+    border-radius   : 12px;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    font-size       : 20px;
+    color           : #fff;
+    flex-shrink     : 0;
+    opacity         : 0.92;
+}
+
+/* ─────────────────────────────────────────────
+   TABLES
+───────────────────────────────────────────── */
+.table {
+    color         : var(--pharmacy-text) !important;
+    margin-bottom : 0;
+}
+.table th {
+    background     : var(--pharmacy-table-th) !important;
+    color          : var(--pharmacy-heading) !important;
+    font-size      : 0.78rem;
+    text-transform : uppercase;
+    letter-spacing : 0.4px;
+    font-weight    : 700;
+    padding        : 12px 16px;
+    border-top     : none !important;
+    border-bottom  : 2px solid var(--pharmacy-border) !important;
+    white-space    : nowrap;
+}
+.table td {
+    color          : var(--pharmacy-text) !important;
+    border-color   : var(--pharmacy-border) !important;
+    vertical-align : middle;
+    padding        : 11px 16px;
+}
+.table tbody tr {
+    transition: background .15s ease;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+    background: var(--pharmacy-table-stripe) !important;
+}
+.table-hover tbody tr:hover td {
+    background: color-mix(in srgb, var(--pharmacy-primary) 6%, var(--pharmacy-card-bg)) !important;
+}
+/* Row separators */
+.table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--pharmacy-border) !important;
+}
+.table-responsive { border-radius: 8px; overflow: hidden; }
+
+/* Table card wrapper */
+.table-card {
+    border-radius : var(--card-border-radius, 12px);
+    overflow      : hidden;
+    border        : 1px solid var(--pharmacy-border);
+    box-shadow    : 0 2px 8px rgba(0,0,0,.05);
+    background    : var(--pharmacy-card-bg);
+}
+.table-card .table { margin-bottom: 0; }
+
+/* Sortable column headers */
+th[data-sort] {
+    cursor      : pointer;
+    user-select : none;
+}
+th[data-sort]:hover {
+    background: color-mix(in srgb, var(--pharmacy-primary) 12%, var(--pharmacy-table-th)) !important;
+}
+th[data-sort]::after {
+    content    : ' ⇅';
+    opacity    : .35;
+    font-size  : .7em;
+}
+th[data-sort].sort-asc::after  { content: ' ↑'; opacity: .8; }
+th[data-sort].sort-desc::after { content: ' ↓'; opacity: .8; }
+
+/* Expiry / Stock color-coded rows */
+.row-expired  td { background: color-mix(in srgb, #ef4444 8%, var(--pharmacy-card-bg)) !important; }
+.row-critical td { background: color-mix(in srgb, #f97316 8%, var(--pharmacy-card-bg)) !important; }
+.row-warning  td { background: color-mix(in srgb, #f59e0b 8%, var(--pharmacy-card-bg)) !important; }
+.row-ok       td { background: color-mix(in srgb, #22c55e 5%, var(--pharmacy-card-bg)) !important; }
+
+/* Cashbook debit/credit row tints */
+.row-debit  td { background: color-mix(in srgb, #ef4444 5%, var(--pharmacy-card-bg)) !important; }
+.row-credit td { background: color-mix(in srgb, #22c55e 5%, var(--pharmacy-card-bg)) !important; }
+
+/* ─────────────────────────────────────────────
+   FILTER BAR & FILTER PILLS
+───────────────────────────────────────────── */
+.filter-bar,
+.filter-card {
+    background    : var(--pharmacy-card-bg);
+    border        : 1px solid var(--pharmacy-border);
+    border-radius : 10px;
+    padding       : 14px 18px;
+    margin-bottom : 16px;
+    box-shadow    : 0 1px 6px rgba(0,0,0,.06);
+}
+.filter-pill {
+    display       : inline-flex;
+    align-items   : center;
+    padding       : 5px 14px;
+    border-radius : 20px;
+    font-size     : 0.8rem;
+    font-weight   : 600;
+    border        : 1px solid var(--pharmacy-border);
+    background    : var(--pharmacy-card-bg);
+    color         : var(--pharmacy-text);
+    cursor        : pointer;
+    transition    : all .15s ease;
+    text-decoration : none;
+    gap           : 4px;
+}
+.filter-pill:hover,
+.filter-pill.active {
+    background   : var(--pharmacy-primary);
+    color        : #fff !important;
+    border-color : var(--pharmacy-primary);
+    box-shadow   : 0 2px 8px color-mix(in srgb, var(--pharmacy-primary) 35%, transparent);
+}
+.filter-pill .badge-count {
+    background    : rgba(255,255,255,0.25);
+    border-radius : 10px;
+    padding       : 1px 6px;
+    font-size     : 0.72rem;
+    margin-left   : 2px;
+}
+.filter-pill:not(.active) .badge-count {
+    background : color-mix(in srgb, var(--pharmacy-primary) 12%, var(--pharmacy-card-bg));
+    color      : var(--pharmacy-primary);
+}
+
+/* ─────────────────────────────────────────────
+   STATUS BADGES
+───────────────────────────────────────────── */
+.status-badge {
+    padding       : 3px 10px;
+    border-radius : 20px;
+    font-size     : 0.72rem;
+    font-weight   : 600;
+    display       : inline-block;
+    white-space   : nowrap;
+}
+
+/* Stock / Product status */
+.badge-instock {
+    background : var(--pharmacy-badge-instock-bg, #d1fae5);
+    color      : var(--pharmacy-badge-instock-text, #065f46);
+}
+.badge-oos {
+    background : var(--pharmacy-badge-oos-bg, #fee2e2);
+    color      : var(--pharmacy-badge-oos-text, #991b1b);
+}
+.badge-expiring {
+    background : var(--pharmacy-badge-expiry-bg, #fff3cd);
+    color      : var(--pharmacy-badge-expiry-text, #856404);
+}
+.badge-expired {
+    background : var(--pharmacy-badge-expired-bg, #fce7f3);
+    color      : var(--pharmacy-badge-expired-text, #9d174d);
+}
+.badge-lowstock {
+    background : var(--pharmacy-badge-lowstock-bg, #fff7e6);
+    color      : var(--pharmacy-badge-lowstock-text, #c2410c);
+}
+
+/* Sale / Invoice status */
+.badge-paid     { background: #d1fae5; color: #065f46; }
+.badge-pending  { background: #fff3cd; color: #856404; }
+.badge-partial  { background: #dbeafe; color: #1e40af; }
+.badge-cancelled{ background: #fee2e2; color: #991b1b; }
+.badge-returned { background: #f3e8ff; color: #6b21a8; }
+
+/* Bootstrap badge overrides */
+.badge {
+    padding       : 5px 10px;
+    font-weight   : 500;
+    border-radius : 20px;
+}
+.badge.bg-primary { background-color: var(--pharmacy-primary) !important; }
+.badge.bg-success { background-color: var(--pharmacy-accent)  !important; }
+
+/* ─────────────────────────────────────────────
+   FORMS
+───────────────────────────────────────────── */
+.form-control,
+.form-select {
+    background    : var(--pharmacy-input-bg) !important;
+    border-color  : var(--pharmacy-input-border) !important;
+    color         : var(--pharmacy-input-text) !important;
+    border-radius : 8px;
+    font-size     : inherit;
+    transition    : border-color .15s ease, box-shadow .15s ease, background .3s ease;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color : var(--pharmacy-accent) !important;
+    box-shadow   : 0 0 0 .2rem color-mix(in srgb, var(--pharmacy-accent) 25%, transparent) !important;
+}
+.form-control::placeholder {
+    color: color-mix(in srgb, var(--pharmacy-input-text) 50%, transparent);
+}
+.input-group-text {
+    background   : var(--pharmacy-input-bg) !important;
+    border-color : var(--pharmacy-input-border) !important;
+    color        : var(--pharmacy-text) !important;
+}
+.form-label {
+    color       : var(--pharmacy-heading);
+    font-weight : 500;
+}
+.form-text {
+    color: color-mix(in srgb, var(--pharmacy-text) 60%, transparent);
+}
+
+/* ─────────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────────── */
+.btn {
+    border-radius : 8px !important;
+    transition    : all .18s ease;
+}
+.btn:hover {
+    transform  : translateY(-1px);
+    box-shadow : 0 4px 12px rgba(0,0,0,.12);
+}
+.btn:active {
+    transform  : translateY(0);
+    box-shadow : none;
+}
+.btn-primary {
+    background   : var(--pharmacy-primary) !important;
+    border-color : var(--pharmacy-primary) !important;
+    color        : #fff !important;
+}
+.btn-primary:hover {
+    background   : var(--pharmacy-primary-hover) !important;
+    border-color : var(--pharmacy-primary-hover) !important;
+}
+.btn-success {
+    background   : var(--pharmacy-accent) !important;
+    border-color : var(--pharmacy-accent) !important;
+}
+.btn-success:hover {
+    background   : var(--pharmacy-accent-hover) !important;
+    border-color : var(--pharmacy-accent-hover) !important;
+}
+.btn-sm { border-radius: 6px !important; }
+/* Loading state */
+.btn.is-loading {
+    pointer-events : none;
+    opacity        : .75;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL SYSTEM — Phase 11 Standardised Framework
+   All modals inherit these rules automatically.
+   Override per-modal with .modal-header-{variant} classes.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Core structure ── */
+.modal-content {
+    background    : var(--pharmacy-modal-bg, #fff) !important;
+    border        : 1px solid var(--pharmacy-border, #e5e7eb) !important;
+    border-radius : 16px !important;
+    color         : var(--pharmacy-text, #374151) !important;
+    box-shadow    : 0 20px 60px rgba(0, 0, 0, .18) !important;
+    overflow      : hidden;
+}
+
+/* ── Header ── */
+.modal-header {
+    background    : linear-gradient(135deg,
+                        var(--pharmacy-primary, #6c3fc5),
+                        var(--pharmacy-accent,  #8e57f0)) !important;
+    color         : #fff !important;
+    border-radius : 0 !important;
+    border-bottom : none !important;
+    padding       : 16px 20px !important;
+}
+.modal-header .modal-title { color: var(--text-color, #fff) !important; font-weight: 600 !important; }
+.modal-header .btn-close   { filter: brightness(0) invert(1) !important; opacity: .85 !important; }
+.modal-header .btn-close:hover { opacity: 1 !important; }
+
+/* ── Header colour variants ── */
+.modal-header-success {
+    background: linear-gradient(135deg,
+                    var(--pharmacy-success, #198754),
+                    color-mix(in srgb, var(--pharmacy-success,#198754) 70%, #20c997)) !important;
+}
+.modal-header-danger {
+    background: linear-gradient(135deg, #dc3545, #c0392b) !important;
+}
+.modal-header-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
+.modal-header-info {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+}
+.modal-header-muted {
+    background    : var(--pharmacy-table-th, #f8fafc) !important;
+    border-bottom : 2px solid var(--pharmacy-border, #dee2e6) !important;
+}
+.modal-header-muted .modal-title { color: var(--pharmacy-heading, #1f2937) !important; }
+.modal-header-muted .btn-close   { filter: none !important; }
+
+/* ── Body & Footer ── */
+.modal-body {
+    color      : var(--pharmacy-text, #374151) !important;
+    background : var(--pharmacy-modal-bg, #fff) !important;
+    padding    : 20px !important;
+}
+.modal-footer {
+    background    : var(--pharmacy-card-bg, #f8fafc) !important;
+    border-color  : var(--pharmacy-border, #dee2e6) !important;
+    border-radius : 0 !important;
+    padding       : 12px 20px !important;
+}
+
+/* ── Dark-mode overrides ── */
+.dark-mode .modal-header       { background: var(--pharmacy-sidebar, #1e2a3a) !important; }
+.dark-mode .modal-header-muted { background: var(--pharmacy-sidebar, #1e2a3a) !important; }
+.dark-mode .modal-header-muted .modal-title { color: var(--pharmacy-text, #e5e7eb) !important; }
+.dark-mode .modal-footer       { background: var(--pharmacy-card-bg, #111827) !important; }
+.dark-mode .modal-body         { background: var(--pharmacy-modal-bg, #1a2332) !important; }
+
+/* ── Size utility classes (use instead of inline max-width) ── */
+.modal-440  { max-width: 440px !important; }
+.modal-460  { max-width: 460px !important; }
+.modal-500  { max-width: 500px !important; }
+.modal-600  { max-width: 600px !important; }
+.modal-700  { max-width: 700px !important; }
+
+/* ── Bodyless confirm modals (icon + action) ── */
+.modal-confirm .modal-body  { padding: 28px 24px !important; }
+.modal-confirm .modal-body i { font-size: 3rem; margin-bottom: 12px; display: block; }
+
+/* ── Invoice / receipt preview modals ── */
+.modal-receipt .modal-body {
+    padding    : 0 !important;
+    max-height : 78vh;
+    overflow-y : auto;
+    background : #f5f5f5 !important;
+}
+.dark-mode .modal-receipt .modal-body { background: var(--card-color, #1a1a1a) !important; }
+
+/* ── Smooth entrance animation (GPU-only, no reflow) ── */
+@media (prefers-reduced-motion: no-preference) {
+    .modal.fade .modal-dialog {
+        transform  : translateY(-16px) scale(0.98);
+        opacity    : 0;
+        transition : transform .22s cubic-bezier(0.34,1.56,0.64,1),
+                     opacity   .18s ease;
+    }
+    .modal.show .modal-dialog {
+        transform : translateY(0) scale(1);
+        opacity   : 1;
+    }
+}
+
+/* ── Mobile responsiveness ── */
+@media (max-width: 576px) {
+    .modal-dialog:not(.modal-fullscreen) {
+        margin        : 8px !important;
+        max-width     : calc(100vw - 16px) !important;
+    }
+    .modal-440, .modal-460, .modal-500, .modal-600, .modal-700 {
+        max-width : calc(100vw - 16px) !important;
+    }
+    .modal-content {
+        border-radius : 12px !important;
+    }
+    .modal-body   { padding: 16px !important; }
+    .modal-footer { padding: 10px 16px !important; }
+    .modal-header { padding: 12px 16px !important; }
+}
+
+/* ── Accessibility: focus trap visible ring ── */
+.modal-content:focus-within { outline: none; }
+.modal .form-control:focus,
+.modal .form-select:focus,
+.modal .btn:focus-visible {
+    box-shadow : 0 0 0 3px color-mix(in srgb, var(--pharmacy-primary,#6c3fc5) 25%, transparent) !important;
+}
+
+/* ─────────────────────────────────────────────
+   ALERTS
+───────────────────────────────────────────── */
+.alert {
+    border-radius : 10px !important;
+    border        : none !important;
+}
+
+/* ─────────────────────────────────────────────
+   DROPDOWN
+───────────────────────────────────────────── */
+.dropdown-menu {
+    background    : var(--pharmacy-dropdown-bg) !important;
+    border-color  : var(--pharmacy-border) !important;
+    border-radius : 10px !important;
+    box-shadow    : 0 4px 20px rgba(0,0,0,.12) !important;
+    transition    : opacity .15s ease, transform .15s ease;
+}
+.dropdown-item {
+    color         : var(--pharmacy-dropdown-text) !important;
+    border-radius : 6px;
+    margin        : 1px 4px;
+    padding-left  : 12px;
+    padding-right : 12px;
+    transition    : background .15s ease;
+}
+.dropdown-item:hover {
+    background: color-mix(in srgb, var(--pharmacy-primary) 10%, var(--pharmacy-dropdown-bg)) !important;
+}
+.dropdown-divider { border-color: var(--pharmacy-border) !important; }
+
+/* ─────────────────────────────────────────────
+   PAGINATION
+───────────────────────────────────────────── */
+.page-link {
+    background   : var(--pharmacy-card-bg) !important;
+    border-color : var(--pharmacy-border) !important;
+    color        : var(--pharmacy-primary) !important;
+    transition   : all .15s ease;
+}
+.page-link:hover {
+    background   : color-mix(in srgb, var(--pharmacy-primary) 10%, var(--pharmacy-card-bg)) !important;
+}
+.page-item.active .page-link {
+    background   : var(--pharmacy-primary) !important;
+    border-color : var(--pharmacy-primary) !important;
+    color        : #fff !important;
+}
+.page-item.disabled .page-link { opacity: .5; }
+
+/* ─────────────────────────────────────────────
+   NAV TABS
+───────────────────────────────────────────── */
+.nav-tabs { border-color: var(--pharmacy-border) !important; }
+.nav-tabs .nav-link {
+    color      : var(--pharmacy-text) !important;
+    transition : all .15s ease;
+}
+.nav-tabs .nav-link:hover {
+    background : color-mix(in srgb, var(--pharmacy-primary) 6%, var(--pharmacy-card-bg));
+}
+.nav-tabs .nav-link.active {
+    background    : var(--pharmacy-card-bg) !important;
+    border-color  : var(--pharmacy-border) var(--pharmacy-border) var(--pharmacy-card-bg) !important;
+    color         : var(--pharmacy-primary) !important;
+    font-weight   : 600;
+}
+.tab-content {
+    background    : var(--pharmacy-card-bg);
+    border        : 1px solid var(--pharmacy-border);
+    border-top    : none;
+    border-radius : 0 0 8px 8px;
+    padding       : 16px;
+}
+
+/* ─────────────────────────────────────────────
+   LIST GROUP
+───────────────────────────────────────────── */
+.list-group-item {
+    background   : var(--pharmacy-card-bg) !important;
+    border-color : var(--pharmacy-border) !important;
+    color        : var(--pharmacy-text) !important;
+    transition   : background .15s ease;
+}
+.list-group-item-action:hover {
+    background: color-mix(in srgb, var(--pharmacy-primary) 8%, var(--pharmacy-card-bg)) !important;
+}
+
+/* ─────────────────────────────────────────────
+   SIDEBAR BRANDING
+───────────────────────────────────────────── */
+.pharmacy-sidebar-logo {
+    max-width  : 80px;
+    max-height : 48px;
+    object-fit : contain;
+}
+
+/* ─────────────────────────────────────────────
+   SIDEBAR STYLES
+───────────────────────────────────────────── */
+.sidebar {
+    box-shadow: 2px 0 5px rgba(0,0,0,.1);
+}
+.sidebar .nav-link {
+    color      : color-mix(in srgb, var(--pharmacy-text, #e0e0e0) 80%, transparent);
+    transition : all .2s ease;
+}
+.sidebar .nav-link:hover {
+    color            : #fff;
+    background-color : rgba(255,255,255,.1);
+}
+.sidebar .nav-link.active {
+    background : linear-gradient(135deg, var(--pharmacy-primary), var(--pharmacy-accent));
+    color      : #fff;
+}
+
+/* Sidebar scrollbar — thin, visible only on hover */
+#sbNav {
+    scrollbar-width : thin;
+    scrollbar-color : transparent transparent;
+    overflow-y      : auto;
+}
+#sbNav:hover {
+    scrollbar-width : auto;
+    scrollbar-color : color-mix(in srgb, var(--pharmacy-primary) 40%, transparent) transparent;
+}
+
+/* ─────────────────────────────────────────────
+   MISC UTILITIES
+───────────────────────────────────────────── */
+.text-muted {
+    color: color-mix(in srgb, var(--pharmacy-text) 55%, transparent) !important;
+}
+.border, .border-bottom, .border-top,
+.border-start, .border-end {
+    border-color: var(--pharmacy-border) !important;
+}
+.bg-white  { background-color: var(--pharmacy-card-bg) !important; }
+.bg-light  { background-color: color-mix(in srgb, var(--pharmacy-body-bg) 50%, var(--pharmacy-card-bg)) !important; }
+hr         { border-color: var(--pharmacy-border) !important; opacity: .6; }
+pre, code  {
+    background    : var(--pharmacy-table-th) !important;
+    color         : var(--pharmacy-text) !important;
+    border        : 1px solid var(--pharmacy-border);
+    border-radius : 6px;
+}
+.bg-primary    { background-color: var(--pharmacy-primary) !important; }
+.text-primary  { color: var(--pharmacy-primary) !important; }
+.border-primary{ border-color: var(--pharmacy-primary) !important; }
+
+/* Truncate long text */
+.text-truncate-2 {
+    display            : -webkit-box;
+    -webkit-line-clamp : 2;
+    -webkit-box-orient : vertical;
+    overflow           : hidden;
+}
+
+/* ─────────────────────────────────────────────
+   GLOBAL SMOOTH TRANSITIONS
+   Applied to every interactive element
+───────────────────────────────────────────── */
+.card,
+.btn,
+.form-control,
+.form-select,
+.modal-content,
+.dropdown-menu,
+.nav-link,
+.list-group-item,
+.page-link,
+.table tbody tr,
+body {
+    transition: background-color .3s ease, border-color .3s ease, color .3s ease;
+}
+
+/* ─────────────────────────────────────────────
+   POS STYLES
+───────────────────────────────────────────── */
+.pos-product-item {
+    cursor        : pointer;
+    transition    : all .2s ease;
+    border        : 1px solid var(--pharmacy-border);
+    border-radius : 10px;
+    padding       : 10px;
+    margin-bottom : 10px;
+    background    : var(--pharmacy-card-bg);
+    color         : var(--pharmacy-text);
+}
+.pos-product-item:hover {
+    background : color-mix(in srgb, var(--pharmacy-primary) 6%, var(--pharmacy-card-bg));
+    transform  : scale(1.02);
+    box-shadow : 0 5px 15px rgba(0,0,0,.1);
+}
+.cart-item {
+    padding       : 10px;
+    border-bottom : 1px solid var(--pharmacy-border);
+    color         : var(--pharmacy-text);
+    transition    : background .15s ease;
+}
+.cart-item:last-child { border-bottom: none; }
+.cart-item:hover {
+    background: color-mix(in srgb, var(--pharmacy-primary) 4%, var(--pharmacy-card-bg));
+}
+
+/* ─────────────────────────────────────────────
+   VARIANT BADGE
+───────────────────────────────────────────── */
+.variant-badge {
+    font-size     : 10px;
+    padding       : 2px 6px;
+    border-radius : 10px;
+    background    : color-mix(in srgb, var(--pharmacy-body-bg) 70%, var(--pharmacy-card-bg));
+    color         : var(--pharmacy-text);
+    margin-left   : 5px;
+    display       : inline-block;
+}
+
+/* ─────────────────────────────────────────────
+   STOCK STATUS (legacy inline helpers)
+───────────────────────────────────────────── */
+.stock-low    { color: #ffc107; font-weight: bold; }
+.stock-out    { color: #dc3545; font-weight: bold; }
+.stock-normal { color: #28a745; }
+
+/* ─────────────────────────────────────────────
+   PRICE COLUMN
+───────────────────────────────────────────── */
+.price-column {
+    font-weight : 600;
+    color       : var(--pharmacy-accent);
+}
+
+/* ─────────────────────────────────────────────
+   PRODUCT ROW
+───────────────────────────────────────────── */
+.product-row { transition: background-color .2s ease; }
+.product-row:hover {
+    background-color: color-mix(in srgb, var(--pharmacy-primary) 5%, var(--pharmacy-card-bg));
+}
+.product-row.out-of-stock {
+    opacity          : .6;
+    background-color : color-mix(in srgb, #ffc107 10%, var(--pharmacy-card-bg));
+}
+
+/* ─────────────────────────────────────────────
+   SEARCH SUGGESTIONS DROPDOWN
+───────────────────────────────────────────── */
+.search-suggestions {
+    position      : absolute;
+    top           : 100%;
+    left          : 0;
+    right         : 0;
+    background    : var(--pharmacy-card-bg);
+    border        : 1px solid var(--pharmacy-border);
+    border-radius : 10px;
+    max-height    : 300px;
+    overflow-y    : auto;
+    z-index       : 1000;
+    display       : none;
+    box-shadow    : 0 5px 15px rgba(0,0,0,.1);
+}
+.suggestion-item {
+    padding       : 10px 15px;
+    cursor        : pointer;
+    border-bottom : 1px solid var(--pharmacy-border);
+    transition    : background-color .15s ease;
+    color         : var(--pharmacy-text);
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover {
+    background-color: color-mix(in srgb, var(--pharmacy-primary) 8%, var(--pharmacy-card-bg));
+}
+.suggestion-name   { font-weight: 600; font-size: 14px; color: var(--pharmacy-heading); }
+.suggestion-detail { font-size: 11px; color: color-mix(in srgb, var(--pharmacy-text) 60%, transparent); }
+
+/* ─────────────────────────────────────────────
+   SCROLLBAR
+───────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--pharmacy-body-bg); border-radius: 10px; }
+::-webkit-scrollbar-thumb {
+    background    : color-mix(in srgb, var(--pharmacy-primary) 60%, var(--pharmacy-body-bg));
+    border-radius : 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--pharmacy-primary);
+}
+* {
+    scrollbar-width : thin;
+    scrollbar-color : color-mix(in srgb, var(--pharmacy-primary) 60%, transparent) transparent;
+}
+
+/* ─────────────────────────────────────────────
+   USER AVATAR CIRCLES (Users module)
+───────────────────────────────────────────── */
+.user-avatar {
+    width           : 36px;
+    height          : 36px;
+    border-radius   : 50%;
+    display         : inline-flex;
+    align-items     : center;
+    justify-content : center;
+    font-weight     : 700;
+    font-size       : 0.85rem;
+    color           : #fff;
+    flex-shrink     : 0;
+}
+
+/* ─────────────────────────────────────────────
+   SETTINGS SUB-NAVIGATION
+───────────────────────────────────────────── */
+.settings-subnav {
+    display       : flex;
+    flex-wrap     : wrap;
+    gap           : 4px;
+    margin-bottom : 20px;
+    padding-bottom: 14px;
+    border-bottom : 2px solid var(--pharmacy-border);
+}
+.settings-subnav a {
+    padding       : 6px 14px;
+    border-radius : 8px;
+    font-size     : 0.82rem;
+    font-weight   : 500;
+    color         : var(--pharmacy-text);
+    text-decoration: none;
+    transition    : all .15s ease;
+    border        : 1px solid transparent;
+}
+.settings-subnav a:hover {
+    background   : color-mix(in srgb, var(--pharmacy-primary) 8%, var(--pharmacy-card-bg));
+    border-color : var(--pharmacy-border);
+}
+.settings-subnav a.active {
+    background   : var(--pharmacy-primary);
+    color        : #fff;
+    border-color : var(--pharmacy-primary);
+}
+
+/* ─────────────────────────────────────────────
+   REPORTS: Color-coded rows
+───────────────────────────────────────────── */
+.report-row-expired  td { background: color-mix(in srgb, #ef4444 8%, var(--pharmacy-card-bg)) !important; }
+.report-row-critical td { background: color-mix(in srgb, #f97316 8%, var(--pharmacy-card-bg)) !important; }
+.report-row-warning  td { background: color-mix(in srgb, #f59e0b 8%, var(--pharmacy-card-bg)) !important; }
+.report-row-oos      td { background: color-mix(in srgb, #ef4444 8%, var(--pharmacy-card-bg)) !important; }
+.report-row-lowstock td { background: color-mix(in srgb, #f97316 6%, var(--pharmacy-card-bg)) !important; }
+.report-row-instock  td { background: color-mix(in srgb, #22c55e 4%, var(--pharmacy-card-bg)) !important; }
+
+/* ─────────────────────────────────────────────
+   CREDIT MODULE: overdue highlight
+───────────────────────────────────────────── */
+.credit-overdue td { background: color-mix(in srgb, #ef4444 6%, var(--pharmacy-card-bg)) !important; }
+.credit-paid    td { opacity: .65; }
+
+/* ─────────────────────────────────────────────
+   PRINT STYLES
+───────────────────────────────────────────── */
+@media print {
+    .sidebar, .navbar, .top-navbar, .page-breadcrumb,
+    .btn, .no-print, #mainSidebar, .filter-bar, .filter-card,
+    #page-loader {
+        display: none !important;
+    }
+    .main-content {
+        margin-left : 0 !important;
+        padding     : 0 !important;
+        animation   : none !important;
+    }
+    .card {
+        box-shadow : none !important;
+        border     : 1px solid #ddd !important;
+    }
+    body {
+        background : #fff !important;
+        color      : #000 !important;
+        animation  : none !important;
+    }
+    .table th { background: #f0f0f0 !important; color: #000 !important; }
+    .table td { color: #000 !important; border-color: #ccc !important; }
+}
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────── */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform  : translateX(-100%);
+        transition : transform .3s ease;
+    }
+    .sidebar.show,
+    .sidebar.sb-mobile-open {
+        transform: translateX(0);
+    }
+    .filter-pill { font-size: 0.75rem; padding: 4px 10px; }
+    .stat-card .stat-value { font-size: 1.5rem; }
+}
+
+@media (max-width: 576px) {
+    .settings-subnav { gap: 3px; }
+    .settings-subnav a { font-size: 0.75rem; padding: 5px 10px; }
+    .table-responsive-sm { font-size: 0.82rem; }
+}
+
+/* ══════════════════════════════════════════════
+   STEP 15 — PERMISSION ENFORCEMENT CLASSES
+   Used by js/permissions.js (Step 16) to visually
+   disable/hide elements the user lacks access to.
+══════════════════════════════════════════════ */
+
+/* Disabled — visible but non-interactive (grayed out) */
+.perm-disabled {
+    opacity         : 0.4 !important;
+    pointer-events  : none !important;
+    cursor          : not-allowed !important;
+}
+
+/* Hidden — completely removed from layout */
+.perm-hidden {
+    display : none !important;
+}
+
+/* Read-only — looks like a display field, not editable */
+.perm-readonly {
+    background      : #f8f9fa !important;
+    pointer-events  : none !important;
+    cursor          : default !important;
+    border-color    : #dee2e6 !important;
+    color           : #6c757d !important;
+}
+
+/* ══════════════════════════════════════════════
+   END OF STYLESHEET — PharmaCare Pro v6.0
+══════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PharmaModal — Skeleton Loader + GPU-Accelerated Animations        Step 8
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Skeleton loader ──────────────────────────────────────────────────────── */
+.pm-skeleton { padding: 1rem; }
+.pm-sk-line {
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: pm-shimmer 1.4s infinite;
+    margin-bottom: 6px;
+}
+.pm-sk-w80 { width: 80%; }
+.pm-sk-w60 { width: 60%; }
+.pm-sk-w90 { width: 90%; }
+.pm-sk-w50 { width: 50%; }
+.pm-sk-w70 { width: 70%; }
+.pm-sk-mt8 { margin-top: 8px; }
+.pm-sk-separator { height: 1px; background: #eee; margin: 16px 0; }
+
+@keyframes pm-shimmer {
+    0%   { background-position:  200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Dark mode skeleton ───────────────────────────────────────────────────── */
+.dark-mode .pm-sk-line {
+    background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
+    background-size: 200% 100%;
+    animation: pm-shimmer 1.4s infinite;
+}
+.dark-mode .pm-sk-separator { background: #3a3a3a; }
+
+/* Modal animation — see MODAL SYSTEM section above */

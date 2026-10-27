@@ -1,0 +1,758 @@
+<?php
+/**
+ * Returns Management Functions
+ * Enhanced with:
+ * - Returnable items calculation
+ * - Sale return summary & details
+ * - Purchase return summary & details
+ * - Date-based return stats for dashboard
+ * - Refund method and cashbook entry status tracking
+ */
+
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/sync_engine.php';    // for cache clearing
+require_once __DIR__ . '/cashbook_functions.php'; // for cashbook lookups
+
+// ─────────────────────────────────────────────────────────
+// 1. GET SALE FOR RETURN (allow paid AND partial payment)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get sale details including items with returnable quantities.
+ *
+ * @param mixed $identifier Sale ID or invoice number
+ * @param bool  $isId       True if identifier is ID, false if invoice_no
+ * @return array|null Sale data with items and already_returned info
+ */
+function getSaleForReturn($identifier, $isId = true) {
+    $db = db();
+    
+    // Allow both 'paid' and 'partial' payment_status
+    if ($isId) {
+        $sale = $db->getOne(
+            "SELECT s.*, c.id as credit_id, c.total_amount as credit_total, c.status as credit_status
+             FROM sales s
+             LEFT JOIN customer_credits c ON c.sale_id = s.id
+             WHERE s.id = :id AND s.payment_status IN ('paid', 'partial')
+               AND s.status != 'voided'",
+            [':id' => $identifier]
+        );
+    } else {
+        $sale = $db->getOne(
+            "SELECT s.*, c.id as credit_id, c.total_amount as credit_total, c.status as credit_status
+             FROM sales s
+             LEFT JOIN customer_credits c ON c.sale_id = s.id
+             WHERE s.invoice_no = :inv AND s.payment_status IN ('paid', 'partial')
+               AND s.status != 'voided'",
+            [':inv' => $identifier]
+        );
+    }
+    
+    if (!$sale) {
+        return null;
+    }
+    
+    // Get sale items with batch details and already returned quantity
+    $items = $db->getAll(
+        "SELECT 
+            si.id as sale_item_id,
+            si.product_id,
+            si.variant_id,
+            si.batch_id,
+            si.quantity as sold_quantity,
+            si.unit_price,
+            si.total as line_total,
+            b.batch_number,
+            b.expiry_date,
+            b.remaining_quantity as batch_stock,
+            p.product_name,
+            p.generic_name,
+            p.brand_name,
+            v.variant_value,
+            COALESCE((
+                SELECT SUM(sr.quantity) 
+                FROM sale_returns sr 
+                WHERE sr.sale_item_id = si.id
+            ), 0) as already_returned
+        FROM sale_items si
+        JOIN batches b ON si.batch_id = b.id
+        JOIN products p ON si.product_id = p.id
+        LEFT JOIN product_variants v ON si.variant_id = v.id
+        WHERE si.sale_id = :sale_id
+        ORDER BY si.id",
+        [':sale_id' => $sale['id']]
+    );
+    
+    // Calculate returnable quantity for each item
+    foreach ($items as &$item) {
+        $item['returnable_qty'] = max(0, $item['sold_quantity'] - $item['already_returned']);
+        $item['max_returnable'] = $item['returnable_qty'];
+        $item['line_total'] = (float)$item['line_total'];
+        $item['unit_price'] = (float)$item['unit_price'];
+    }
+    
+    $sale['items'] = $items;
+    $sale['grand_total'] = (float)$sale['grand_total'];
+    $sale['paid_amount'] = (float)$sale['paid_amount'];
+    $sale['net_amount'] = (float)$sale['net_amount'];
+    
+    return $sale;
+}
+
+// ─────────────────────────────────────────────────────────
+// 2. GET PURCHASE FOR RETURN (with already returned)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get purchase details including items with returnable quantities.
+ *
+ * @param mixed $identifier Purchase ID or invoice number
+ * @param bool  $isId       True if identifier is ID, false if purchase_invoice_no
+ * @return array|null Purchase data with items and already_returned info
+ */
+function getPurchaseForReturn($identifier, $isId = true) {
+    $db = db();
+    
+    if ($isId) {
+        $purchase = $db->getOne(
+            "SELECT p.*, s.supplier_name, s.current_balance, s.due_amount
+             FROM purchases p
+             JOIN suppliers s ON p.supplier_id = s.id
+             WHERE p.id = :id AND p.status != 'voided'",
+            [':id' => $identifier]
+        );
+    } else {
+        $purchase = $db->getOne(
+            "SELECT p.*, s.supplier_name, s.current_balance, s.due_amount
+             FROM purchases p
+             JOIN suppliers s ON p.supplier_id = s.id
+             WHERE p.purchase_invoice_no = :inv AND p.status != 'voided'",
+            [':inv' => $identifier]
+        );
+    }
+    
+    if (!$purchase) {
+        return null;
+    }
+    
+    // Get purchase items with batch details and already returned quantity
+    $items = $db->getAll(
+        "SELECT 
+            pi.id as purchase_item_id,
+            pi.product_id,
+            pi.variant_id,
+            pi.batch_id,
+            pi.quantity as purchased_quantity,
+            pi.unit_price,
+            pi.total as line_total,
+            b.batch_number,
+            b.expiry_date,
+            b.remaining_quantity as batch_stock,
+            p.product_name,
+            p.generic_name,
+            p.brand_name,
+            v.variant_value,
+            COALESCE((
+                SELECT SUM(pr.quantity) 
+                FROM purchase_returns pr 
+                WHERE pr.purchase_item_id = pi.id
+            ), 0) as already_returned
+        FROM purchase_items pi
+        JOIN batches b ON pi.batch_id = b.id
+        JOIN products p ON pi.product_id = p.id
+        LEFT JOIN product_variants v ON pi.variant_id = v.id
+        WHERE pi.purchase_id = :purchase_id
+        ORDER BY pi.id",
+        [':purchase_id' => $purchase['id']]
+    );
+    
+    foreach ($items as &$item) {
+        $item['returnable_qty'] = max(0, $item['purchased_quantity'] - $item['already_returned']);
+        $item['max_returnable'] = $item['returnable_qty'];
+        $item['line_total'] = (float)$item['line_total'];
+        $item['unit_price'] = (float)$item['unit_price'];
+    }
+    
+    $purchase['items'] = $items;
+    $purchase['total'] = (float)$purchase['total'];
+    $purchase['paid_amount'] = (float)$purchase['paid_amount'];
+    $purchase['due_amount'] = (float)$purchase['due_amount'];
+    
+    return $purchase;
+}
+
+// ─────────────────────────────────────────────────────────
+// 3. RETURNABLE ITEMS HELPER (for reusable logic)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get returnable items for a sale or purchase.
+ *
+ * @param int    $parentId Sale or Purchase ID
+ * @param string $type     'sale' or 'purchase'
+ * @return array  List of items with qty_sold, qty_already_returned, qty_returnable
+ */
+function getReturnableItems($parentId, $type = 'sale') {
+    $db = db();
+    if ($type === 'sale') {
+        $items = $db->getAll(
+            "SELECT 
+                si.id as item_id,
+                si.product_id,
+                si.batch_id,
+                si.quantity as sold_qty,
+                si.unit_price,
+                p.product_name,
+                b.batch_number,
+                COALESCE(SUM(sr.quantity), 0) as returned_qty
+            FROM sale_items si
+            JOIN products p ON si.product_id = p.id
+            JOIN batches b ON si.batch_id = b.id
+            LEFT JOIN sale_returns sr ON sr.sale_item_id = si.id
+            WHERE si.sale_id = :pid
+            GROUP BY si.id",
+            [':pid' => $parentId]
+        );
+    } else {
+        $items = $db->getAll(
+            "SELECT 
+                pi.id as item_id,
+                pi.product_id,
+                pi.batch_id,
+                pi.quantity as purchased_qty,
+                pi.unit_price,
+                p.product_name,
+                b.batch_number,
+                COALESCE(SUM(pr.quantity), 0) as returned_qty
+            FROM purchase_items pi
+            JOIN products p ON pi.product_id = p.id
+            JOIN batches b ON pi.batch_id = b.id
+            LEFT JOIN purchase_returns pr ON pr.purchase_item_id = pi.id
+            WHERE pi.purchase_id = :pid
+            GROUP BY pi.id",
+            [':pid' => $parentId]
+        );
+    }
+    
+    foreach ($items as &$item) {
+        $item['qty_returnable'] = $item[$type === 'sale' ? 'sold_qty' : 'purchased_qty'] - $item['returned_qty'];
+    }
+    
+    // Filter out items with zero returnable qty
+    return array_filter($items, fn($i) => $i['qty_returnable'] > 0);
+}
+
+// ─────────────────────────────────────────────────────────
+// 4. SALE RETURN SUMMARY
+// ─────────────────────────────────────────────────────────
+/**
+ * Get summary of returns for a specific sale.
+ *
+ * @param int $sale_id
+ * @return array ['total_returned_amount', 'return_count', 'net_amount']
+ */
+function getSaleReturnSummary($sale_id) {
+    $db = db();
+    $result = $db->getOne(
+        "SELECT 
+            COALESCE(SUM(total_amount), 0) as total_returned,
+            COUNT(DISTINCT id) as return_count
+         FROM sale_returns
+         WHERE sale_id = :sid",
+        [':sid' => $sale_id]
+    );
+    $totalReturned = (float)($result['total_returned'] ?? 0);
+    $returnCount = (int)($result['return_count'] ?? 0);
+    
+    // Get sale net amount (original grand_total minus returns)
+    $sale = $db->getOne("SELECT grand_total FROM sales WHERE id = :sid", [':sid' => $sale_id]);
+    $grandTotal = $sale ? (float)$sale['grand_total'] : 0;
+    $netAmount = $grandTotal - $totalReturned;
+    
+    return [
+        'total_returned_amount' => $totalReturned,
+        'return_count'          => $returnCount,
+        'net_amount'            => max(0, $netAmount)
+    ];
+}
+
+// ─────────────────────────────────────────────────────────
+// 5. PURCHASE RETURN SUMMARY
+// ─────────────────────────────────────────────────────────
+/**
+ * Get summary of returns for a specific purchase.
+ *
+ * @param int $purchase_id
+ * @return array ['total_returned_amount', 'return_count', 'net_amount']
+ */
+function getPurchaseReturnSummary($purchase_id) {
+    $db = db();
+    $result = $db->getOne(
+        "SELECT 
+            COALESCE(SUM(total_amount), 0) as total_returned,
+            COUNT(DISTINCT id) as return_count
+         FROM purchase_returns
+         WHERE purchase_id = :pid",
+        [':pid' => $purchase_id]
+    );
+    $totalReturned = (float)($result['total_returned'] ?? 0);
+    $returnCount = (int)($result['return_count'] ?? 0);
+    
+    $purchase = $db->getOne("SELECT total FROM purchases WHERE id = :pid", [':pid' => $purchase_id]);
+    $originalTotal = $purchase ? (float)$purchase['total'] : 0;
+    $netAmount = $originalTotal - $totalReturned;
+    
+    return [
+        'total_returned_amount' => $totalReturned,
+        'return_count'          => $returnCount,
+        'net_amount'            => max(0, $netAmount)
+    ];
+}
+
+// ─────────────────────────────────────────────────────────
+// 6. SALE RETURN DETAILS (single return)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get full details of a specific sale return.
+ *
+ * @param int $return_id
+ * @return array|null Return details including items, cashbook entry status
+ */
+function getSaleReturnDetails($return_id) {
+    $db = db();
+    $return = $db->getOne(
+        "SELECT sr.*, 
+                s.invoice_no, s.customer_name, s.customer_phone,
+                u.full_name as returned_by_name,
+                p.product_name, p.generic_name,
+                b.batch_number
+         FROM sale_returns sr
+         JOIN sales s ON sr.sale_id = s.id
+         JOIN sale_items si ON sr.sale_item_id = si.id
+         JOIN products p ON sr.product_id = p.id
+         JOIN batches b ON sr.batch_id = b.id
+         LEFT JOIN users u ON sr.returned_by = u.id
+         WHERE sr.id = :rid",
+        [':rid' => $return_id]
+    );
+    
+    if (!$return) return null;
+    
+    // Check if cashbook entry exists for this return
+    $cashbook = $db->getOne(
+        "SELECT id, entry_type, debit, credit, payment_method 
+         FROM cashbook 
+         WHERE reference_id = :rid AND reference_type = 'sale_return'",
+        [':rid' => $return_id]
+    );
+    $return['cashbook_entry_exists'] = ($cashbook !== null);
+    $return['cashbook_amount'] = $cashbook ? (float)($cashbook['debit'] ?? 0) : 0;
+    $return['cashbook_payment_method'] = $cashbook['payment_method'] ?? null;
+    
+    return $return;
+}
+
+// ─────────────────────────────────────────────────────────
+// 7. PURCHASE RETURN DETAILS
+// ─────────────────────────────────────────────────────────
+/**
+ * Get full details of a specific purchase return.
+ *
+ * @param int $return_id
+ * @return array|null
+ */
+function getPurchaseReturnDetails($return_id) {
+    $db = db();
+    $return = $db->getOne(
+        "SELECT pr.*, 
+                p.purchase_invoice_no, p.supplier_id,
+                s.supplier_name,
+                u.full_name as returned_by_name,
+                prod.product_name, prod.generic_name,
+                b.batch_number
+         FROM purchase_returns pr
+         JOIN purchases p ON pr.purchase_id = p.id
+         JOIN suppliers s ON p.supplier_id = s.id
+         JOIN purchase_items pi ON pr.purchase_item_id = pi.id
+         JOIN products prod ON pr.product_id = prod.id
+         JOIN batches b ON pr.batch_id = b.id
+         LEFT JOIN users u ON pr.returned_by = u.id
+         WHERE pr.id = :rid",
+        [':rid' => $return_id]
+    );
+    
+    if (!$return) return null;
+    
+    // Check cashbook entry (purchase_return = credit)
+    $cashbook = $db->getOne(
+        "SELECT id, entry_type, debit, credit, payment_method 
+         FROM cashbook 
+         WHERE reference_id = :rid AND reference_type = 'purchase_return'",
+        [':rid' => $return_id]
+    );
+    $return['cashbook_entry_exists'] = ($cashbook !== null);
+    $return['cashbook_amount'] = $cashbook ? (float)($cashbook['credit'] ?? 0) : 0;
+    $return['cashbook_payment_method'] = $cashbook['payment_method'] ?? null;
+    
+    return $return;
+}
+
+// ─────────────────────────────────────────────────────────
+// 8. GET ALL SALE RETURNS (enhanced with filters)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get paginated list of sale returns with filters.
+ *
+ * @param int    $page
+ * @param int    $perPage
+ * @param string $search      Search by return_no, invoice_no, customer_name
+ * @param string $fromDate    Y-m-d (optional)
+ * @param string $toDate      Y-m-d (optional)
+ * @param string $refundMethod (optional) cash/credit_note/bank
+ * @return array
+ */
+function getAllSaleReturns($page = 1, $perPage = 20, $search = '', $fromDate = '', $toDate = '', $refundMethod = '') {
+    $db = db();
+    $offset = ($page - 1) * $perPage;
+    
+    $where = "1";
+    $params = [];
+    
+    if (!empty($search)) {
+        $where .= " AND (sr.return_no LIKE :search OR s.invoice_no LIKE :search OR s.customer_name LIKE :search)";
+        $params[':search'] = "%$search%";
+    }
+    if (!empty($fromDate)) {
+        $where .= " AND DATE(sr.created_at) >= :from";
+        $params[':from'] = $fromDate;
+    }
+    if (!empty($toDate)) {
+        $where .= " AND DATE(sr.created_at) <= :to";
+        $params[':to'] = $toDate;
+    }
+    if (!empty($refundMethod) && in_array($refundMethod, ['cash', 'credit_note', 'bank'])) {
+        $where .= " AND sr.refund_method = :method";
+        $params[':method'] = $refundMethod;
+    }
+    
+    // Main query with all fields
+    $sql = "SELECT 
+                sr.id,
+                sr.return_no,
+                sr.sale_id,
+                sr.quantity,
+                sr.unit_price,
+                sr.total_amount,
+                sr.reason,
+                sr.refund_method,
+                sr.created_at,
+                s.invoice_no,
+                s.customer_name,
+                p.product_name,
+                u.full_name as returned_by,
+                (SELECT COUNT(*) FROM cashbook WHERE reference_id = sr.id AND reference_type = 'sale_return') as has_cashbook
+            FROM sale_returns sr
+            JOIN sales s ON sr.sale_id = s.id
+            JOIN sale_items si ON sr.sale_item_id = si.id
+            JOIN products p ON sr.product_id = p.id
+            LEFT JOIN users u ON sr.returned_by = u.id
+            WHERE $where
+            ORDER BY sr.created_at DESC
+            LIMIT " . (int)$offset . ", " . (int)$perPage;
+    
+    $returns = $db->getAll($sql, $params);
+    
+    // Get total count
+    $countSql = "SELECT COUNT(DISTINCT sr.id) as total FROM sale_returns sr
+                 JOIN sales s ON sr.sale_id = s.id
+                 WHERE $where";
+    $totalRow = $db->getOne($countSql, $params);
+    $total = $totalRow ? (int)$totalRow['total'] : 0;
+    
+    return [
+        'data' => $returns,
+        'total' => $total,
+        'page' => $page,
+        'perPage' => $perPage,
+        'totalPages' => ceil($total / $perPage)
+    ];
+}
+
+// ─────────────────────────────────────────────────────────
+// 9. GET ALL PURCHASE RETURNS (enhanced)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get paginated list of purchase returns with filters.
+ *
+ * @param int    $page
+ * @param int    $perPage
+ * @param string $search
+ * @param string $fromDate
+ * @param string $toDate
+ * @param string $refundMethod
+ * @return array
+ */
+function getAllPurchaseReturns($page = 1, $perPage = 20, $search = '', $fromDate = '', $toDate = '', $refundMethod = '') {
+    $db = db();
+    $offset = ($page - 1) * $perPage;
+    
+    $where = "1";
+    $params = [];
+    
+    if (!empty($search)) {
+        $where .= " AND (pr.return_no LIKE :search OR p.purchase_invoice_no LIKE :search OR s.supplier_name LIKE :search)";
+        $params[':search'] = "%$search%";
+    }
+    if (!empty($fromDate)) {
+        $where .= " AND DATE(pr.created_at) >= :from";
+        $params[':from'] = $fromDate;
+    }
+    if (!empty($toDate)) {
+        $where .= " AND DATE(pr.created_at) <= :to";
+        $params[':to'] = $toDate;
+    }
+    if (!empty($refundMethod) && in_array($refundMethod, ['cash', 'credit_note', 'bank'])) {
+        $where .= " AND pr.refund_method = :method";
+        $params[':method'] = $refundMethod;
+    }
+    
+    $sql = "SELECT 
+                pr.id,
+                pr.return_no,
+                pr.purchase_id,
+                pr.quantity,
+                pr.unit_price,
+                pr.total_amount,
+                pr.reason,
+                pr.refund_method,
+                pr.credit_note_ref,
+                pr.created_at,
+                p.purchase_invoice_no,
+                s.supplier_name,
+                prod.product_name,
+                u.full_name as returned_by,
+                (SELECT COUNT(*) FROM cashbook WHERE reference_id = pr.id AND reference_type = 'purchase_return') as has_cashbook
+            FROM purchase_returns pr
+            JOIN purchases p ON pr.purchase_id = p.id
+            JOIN suppliers s ON p.supplier_id = s.id
+            JOIN purchase_items pi ON pr.purchase_item_id = pi.id
+            JOIN products prod ON pr.product_id = prod.id
+            LEFT JOIN users u ON pr.returned_by = u.id
+            WHERE $where
+            ORDER BY pr.created_at DESC
+            LIMIT " . (int)$offset . ", " . (int)$perPage;
+    
+    $returns = $db->getAll($sql, $params);
+    
+    $countSql = "SELECT COUNT(DISTINCT pr.id) as total FROM purchase_returns pr
+                 JOIN purchases p ON pr.purchase_id = p.id
+                 WHERE $where";
+    $totalRow = $db->getOne($countSql, $params);
+    $total = $totalRow ? (int)$totalRow['total'] : 0;
+    
+    return [
+        'data' => $returns,
+        'total' => $total,
+        'page' => $page,
+        'perPage' => $perPage,
+        'totalPages' => ceil($total / $perPage)
+    ];
+}
+
+// ─────────────────────────────────────────────────────────
+// 10. RETURN STATS BY DATE (for dashboard)
+// ─────────────────────────────────────────────────────────
+/**
+ * Get aggregated return statistics for a given date.
+ *
+ * @param string $date Y-m-d
+ * @return array
+ */
+function getReturnStatsByDate($date) {
+    $db = db();
+    
+    // Sale returns
+    $saleStats = $db->getOne(
+        "SELECT 
+            COALESCE(SUM(total_amount), 0) as total_amount,
+            COUNT(*) as count
+         FROM sale_returns
+         WHERE DATE(created_at) = :date",
+        [':date' => $date]
+    );
+    
+    // Purchase returns
+    $purchaseStats = $db->getOne(
+        "SELECT 
+            COALESCE(SUM(total_amount), 0) as total_amount,
+            COUNT(*) as count
+         FROM purchase_returns
+         WHERE DATE(created_at) = :date",
+        [':date' => $date]
+    );
+    
+    return [
+        'sale_returns' => [
+            'total_amount' => (float)($saleStats['total_amount'] ?? 0),
+            'count' => (int)($saleStats['count'] ?? 0)
+        ],
+        'purchase_returns' => [
+            'total_amount' => (float)($purchaseStats['total_amount'] ?? 0),
+            'count' => (int)($purchaseStats['count'] ?? 0)
+        ],
+        'combined_total' => (float)($saleStats['total_amount'] ?? 0) + (float)($purchaseStats['total_amount'] ?? 0)
+    ];
+}
+
+// ─────────────────────────────────────────────────────────
+// 11. LEGACY/UTILITY FUNCTIONS (kept for backward compatibility)
+// ─────────────────────────────────────────────────────────
+/**
+ * Process sale return (legacy wrapper, but now uses sync_engine and cashbook).
+ * For new code, use ajax/process_return.php instead.
+ *
+ * @deprecated Use ajax/process_return.php endpoint.
+ */
+function processSaleReturn($saleId, $items, $reason) {
+    error_log("processSaleReturn() is deprecated. Use unified return processor.");
+    $db = db();
+    $db->beginTransaction();
+    
+    try {
+        $totalReturnAmount = 0;
+        $returnNo = 'SR-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        
+        foreach ($items as $item) {
+            if ($item['quantity'] <= 0) continue;
+            
+            // Get sale item
+            $saleItem = $db->getOne(
+                "SELECT * FROM sale_items WHERE id = :id AND sale_id = :sid",
+                [':id' => $item['sale_item_id'], ':sid' => $saleId]
+            );
+            if (!$saleItem) throw new Exception("Sale item not found");
+            if ($item['quantity'] > $saleItem['quantity']) throw new Exception("Return quantity exceeds sold quantity");
+            
+            // Update batch stock (restore)
+            $batch = $db->getOne("SELECT remaining_quantity FROM batches WHERE id = :bid FOR UPDATE", [':bid' => $saleItem['batch_id']]);
+            $newQty = $batch['remaining_quantity'] + $item['quantity'];
+            $db->run("UPDATE batches SET remaining_quantity = :nq WHERE id = :bid", [':nq' => $newQty, ':bid' => $saleItem['batch_id']]);
+            
+            $returnAmount = $item['quantity'] * $saleItem['unit_price'];
+            $totalReturnAmount += $returnAmount;
+            
+            // Insert sale_return
+            $returnId = insertData('sale_returns', [
+                'return_no' => $returnNo,
+                'sale_id' => $saleId,
+                'sale_item_id' => $saleItem['id'],
+                'batch_id' => $saleItem['batch_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $saleItem['unit_price'],
+                'total_amount' => $returnAmount,
+                'reason' => $reason,
+                'refund_method' => 'cash',
+                'returned_by' => $_SESSION['user_id']
+            ]);
+            
+            // Stock movement
+            insertData('stock_movements', [
+                'batch_id' => $saleItem['batch_id'],
+                'movement_type' => 'return_in',
+                'quantity' => $item['quantity'],
+                'reference_id' => $returnId,
+                'reference_type' => 'sale_return',
+                'previous_quantity' => $batch['remaining_quantity'],
+                'new_quantity' => $newQty,
+                'created_by' => $_SESSION['user_id']
+            ]);
+        }
+        
+        // Update sale net amount
+        $db->run("UPDATE sales SET net_amount = net_amount - :amt WHERE id = :sid", [':amt' => $totalReturnAmount, ':sid' => $saleId]);
+        
+        $db->commit();
+        // Sync engine call for backward compatibility
+        syncAfterSaleReturn($returnId ?? 0, $saleId, $totalReturnAmount, 'cash', $returnNo);
+        
+        return ['success' => true, 'return_amount' => $totalReturnAmount];
+    } catch (Exception $e) {
+        $db->rollback();
+        error_log("Sale Return Error: " . $e->getMessage());
+        return ['success' => false, 'message' => $e->getMessage()];
+    }
+}
+
+/**
+ * Process purchase return (legacy wrapper).
+ *
+ * @deprecated Use ajax/process_return.php endpoint.
+ */
+function processPurchaseReturn($purchaseId, $items, $reason) {
+    error_log("processPurchaseReturn() is deprecated. Use unified return processor.");
+    $db = db();
+    $db->beginTransaction();
+    
+    try {
+        $totalReturnAmount = 0;
+        $returnNo = 'PR-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        
+        foreach ($items as $item) {
+            if ($item['quantity'] <= 0) continue;
+            
+            $purchaseItem = $db->getOne(
+                "SELECT * FROM purchase_items WHERE id = :id AND purchase_id = :pid",
+                [':id' => $item['purchase_item_id'], ':pid' => $purchaseId]
+            );
+            if (!$purchaseItem) throw new Exception("Purchase item not found");
+            if ($item['quantity'] > $purchaseItem['quantity']) throw new Exception("Return quantity exceeds purchased quantity");
+            
+            // Update batch stock (deduct)
+            $batch = $db->getOne("SELECT remaining_quantity FROM batches WHERE id = :bid FOR UPDATE", [':bid' => $purchaseItem['batch_id']]);
+            if ($batch['remaining_quantity'] < $item['quantity']) throw new Exception("Insufficient stock in batch");
+            $newQty = $batch['remaining_quantity'] - $item['quantity'];
+            $db->run("UPDATE batches SET remaining_quantity = :nq WHERE id = :bid", [':nq' => $newQty, ':bid' => $purchaseItem['batch_id']]);
+            
+            $returnAmount = $item['quantity'] * $purchaseItem['unit_price'];
+            $totalReturnAmount += $returnAmount;
+            
+            $returnId = insertData('purchase_returns', [
+                'return_no' => $returnNo,
+                'purchase_id' => $purchaseId,
+                'purchase_item_id' => $purchaseItem['id'],
+                'batch_id' => $purchaseItem['batch_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $purchaseItem['unit_price'],
+                'total_amount' => $returnAmount,
+                'reason' => $reason,
+                'refund_method' => 'cash',
+                'returned_by' => $_SESSION['user_id']
+            ]);
+            
+            insertData('stock_movements', [
+                'batch_id' => $purchaseItem['batch_id'],
+                'movement_type' => 'return_out',
+                'quantity' => $item['quantity'],
+                'reference_id' => $returnId,
+                'reference_type' => 'purchase_return',
+                'previous_quantity' => $batch['remaining_quantity'],
+                'new_quantity' => $newQty,
+                'created_by' => $_SESSION['user_id']
+            ]);
+            
+            // Reduce supplier balance
+            $db->run("UPDATE suppliers SET current_balance = GREATEST(0, current_balance - :amt) 
+                      WHERE id = (SELECT supplier_id FROM purchases WHERE id = :pid)",
+                      [':amt' => $returnAmount, ':pid' => $purchaseId]);
+        }
+        
+        $db->run("UPDATE purchases SET total = total - :amt WHERE id = :pid", [':amt' => $totalReturnAmount, ':pid' => $purchaseId]);
+        
+        $db->commit();
+        syncAfterPurchaseReturn($returnId ?? 0, $purchaseId, $purchaseItem['supplier_id'] ?? 0, $totalReturnAmount, $returnNo, 'cash');
+        
+        return ['success' => true, 'return_amount' => $totalReturnAmount];
+    } catch (Exception $e) {
+        $db->rollback();
+        error_log("Purchase Return Error: " . $e->getMessage());
+        return ['success' => false, 'message' => $e->getMessage()];
+    }
+}
+?>

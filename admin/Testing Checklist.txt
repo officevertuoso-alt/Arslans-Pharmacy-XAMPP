@@ -1,0 +1,129 @@
+# Pharmacy Management System - Testing Checklist
+
+## 1. Authentication & Security
+- [ ] Login with correct credentials redirects to dashboard
+- [ ] Login with wrong credentials shows error and increments failed attempts
+- [ ] After 5 failed attempts, account locked for 15 minutes
+- [ ] "Remember Me" works (relogin after session expiry)
+- [ ] Logout destroys session and clears cookies
+- [ ] Accessing protected page without login redirects to login page
+- [ ] Admin-only pages (e.g., User Management) deny pharmacist/cashier
+- [ ] CSRF token present in all POST forms and verified
+
+## 2. Product Management
+- [ ] Add product with all fields (name, code, category, generic, brand, strength, dosage form, unit, prices)
+- [ ] Add product variants (e.g., Diaper Small, Medium) and display correctly
+- [ ] Edit product information (name, price, etc.)
+- [ ] Soft delete product (status becomes 0, not visible in lists)
+- [ ] Search products by name, code, generic name
+- [ ] Product image upload (if implemented)
+
+## 3. Purchase Management
+- [ ] Add purchase with supplier, date, items
+- [ ] Select product (search works), fill batch number, expiry date, quantity, purchase price, selling price
+- [ ] Auto-calculate subtotal, discount, tax, total
+- [ ] Save purchase → batch created, stock_movements recorded, supplier balance updated
+- [ ] View purchase list with pagination and search
+- [ ] View purchase details with all items
+- [ ] Edit purchase (if allowed) – should not affect stock incorrectly
+- [ ] Delete purchase (if no sales) – stock should be reversed
+
+## 4. Supplier Management
+- [ ] Add supplier with name, phone, email, address, opening balance
+- [ ] Edit supplier details
+- [ ] Delete supplier (soft delete if purchases exist)
+- [ ] List suppliers with outstanding balance highlight
+- [ ] Supplier statement (Ledger) with date filter, opening balance, running balance
+- [ ] Record payment against a purchase → reduces supplier balance, updates purchase payment_status, cashbook entry
+- [ ] Print payment receipt
+
+## 5. Sales (POS) & Billing
+- [ ] Search product by barcode/name
+- [ ] Add to cart with quantity, auto price from batch (FIFO)
+- [ ] Apply discount percent or amount at invoice level
+- [ ] Apply tax (if enabled)
+- [ ] Select customer (walk-in or registered)
+- [ ] Payment: cash, card, online, or credit (creates customer_credit record)
+- [ ] Print invoice with company details and items
+- [ ] Sale saved: stock reduced from batches, stock_movements logged, cashbook updated (debit)
+- [ ] View sale history with filters (date, customer, invoice no)
+- [ ] Void/cancel sale (should restore stock)
+
+## 6. Returns
+- [ ] Sale return: select sale, select item, quantity, reason
+- [ ] Stock returned to batch, supplier balance NOT affected (customer gets credit/refund)
+- [ ] Purchase return: select purchase item, quantity, reason
+- [ ] Stock removed from batch, supplier balance reduced, cashbook entry (credit)
+- [ ] Return invoice printed
+
+## 7. Credit Management
+- [ ] Create credit sale from POS (payment_method = 'credit')
+- [ ] Customer credit appears in "Customer Credits" list
+- [ ] Record credit payment (partial or full) → updates status, cashbook debit
+- [ ] Credit overdue alerts (if due date passed)
+
+## 8. Stock & Batches
+- [ ] View stock summary (product-wise stock_in_pieces, batch_count, nearest expiry)
+- [ ] View expiry alerts (batches expiring in 30/90 days)
+- [ ] Low stock alerts (remaining_quantity <= reorder_level)
+- [ ] Block expired batches automatically (trigger)
+- [ ] FIFO during sale (oldest batch used first)
+
+## 9. Reports
+- [ ] Sales Report (date range, summary + details, export to Excel/PDF)
+- [ ] Purchase Report
+- [ ] Stock Report (current stock, batch-wise)
+- [ ] Profit & Loss Report (sales profit = (selling_price - purchase_price) * quantity)
+- [ ] Supplier Statement (ledger)
+- [ ] Customer Credit Report
+
+## 10. User & Permission Management
+- [ ] Admin can add new user (username, password, role)
+- [ ] Admin can edit user (status, role)
+- [ ] Admin can set granular permissions per module (view, add, edit, delete, print) via User Permissions interface
+- [ ] Pharmacist/cashier cannot access admin-only pages
+- [ ] Permission changes take effect immediately (session cache cleared)
+
+## 11. Settings & Configuration
+- [ ] Company Settings (name, logo, phone, email, address, footer)
+- [ ] System Preferences (low stock threshold, near expiry days, tax, default discount)
+- [ ] Backup database (manual or scheduled)
+- [ ] Restore from backup (admin only)
+
+## 12. System Health & Maintenance
+- [ ] Run system_check.php – all checks green
+- [ ] Auto-fix invoice sequences works
+- [ ] Auto-fix expired batches flag works
+- [ ] Backup folder not accessible via URL (403)
+- [ ] Logs directory writable (php_errors.log, slow_queries.log)
+- [ ] Activity logs are recorded for important actions (login, sale, purchase, delete)
+
+## 13. Performance & Edge Cases
+- [ ] Large number of products (1000+) – search speed acceptable
+- [ ] Concurrent invoice generation – no duplicate invoice numbers (test with multiple tabs)
+- [ ] Negative stock prevention – cannot sell more than available in batch
+- [ ] Expiry date validation – cannot purchase with past expiry date
+- [ ] Payment amount > due amount prevented
+- [ ] Discount cannot exceed total
+
+## 14. UI/UX
+- [ ] Responsive layout on mobile (sidebar collapses)
+- [ ] Bootstrap 5 components consistent (cards, modals, alerts)
+- [ ] Form validation (client-side and server-side)
+- [ ] Clear flash messages after actions
+- [ ] Print-friendly pages (media print CSS)
+
+## 15. Error Handling
+- [ ] Database connection failure shows custom 503 page (production)
+- [ ] PDO exceptions logged, not shown to user
+- [ ] AJAX requests return JSON with error message
+- [ ] 404 page exists (404.php)
+- [ ] 403 page exists (403.php)
+
+---
+
+## Test Sign-off
+
+| Tested By | Date | Status | Remarks |
+|-----------|------|--------|---------|
+|           |      |        |         |

@@ -1,0 +1,122 @@
+PHASE 25 – POS ADVANCED — TESTING CHECKLIST
+============================================================
+Run the migration SQL FIRST:
+  admin/phase25_pos_advanced_migration.sql
+
+------------------------------------------------------------
+1. FIRST EXPIRE FIRST OUT (FEFO)
+------------------------------------------------------------
+[ ] Open POS, search for a product that has batches with
+    different expiry dates
+[ ] Add to cart — cart item shows nearest expiry in green/
+    amber/red (≤30 days = amber, expired = red)
+[ ] Cart item shows "FEFO×N" badge when product spans
+    multiple batches
+[ ] Confirm invoice — check sale_items table: batch_number
+    and expiry_date columns are populated for each row
+[ ] Verify ORDER BY expiry_date ASC, id ASC is respected
+    (earliest-expiring batch deducted first)
+[ ] Products with only NULL expiry_date also work (no crash)
+
+------------------------------------------------------------
+2. BATCH SALES — INVOICE DISPLAY
+------------------------------------------------------------
+[ ] In company_settings, enable "Show Batch on Invoice"
+[ ] Make a sale with a multi-batch product
+[ ] Thermal print: each sale_item row shows B:BATCHNO Exp:DD/MM/YYYY
+[ ] Thermal print: FEFO×N badge shows on first row of product
+[ ] A4 invoice: Batch and Expiry columns visible
+[ ] A4 invoice: FEFO×N badge visible on item name
+[ ] Disable "Show Batch on Invoice" — batch details hidden
+
+------------------------------------------------------------
+3. PARTIAL PAYMENTS
+------------------------------------------------------------
+[ ] Open POS, add items to cart
+[ ] Enter paid amount LESS than grand total (e.g. 500 on 1000)
+[ ] Partial Payment alert appears showing: Paid: X | Credit Due: Y
+[ ] Customer name + phone become required (red asterisk)
+[ ] Due date field appears
+[ ] Complete sale — check customer_credits table has correct balance
+[ ] Recent Sales shows correct payment method badge
+[ ] View sale — payment_status = 'partial'
+
+------------------------------------------------------------
+4. CREDIT SALES
+------------------------------------------------------------
+[ ] Click "Credit" payment method
+[ ] Customer name, phone, due date required
+[ ] Complete full credit sale (paid = 0)
+[ ] Check customer_credits: status='active', total_amount = grand_total
+[ ] View sale — payment_status = 'pending'
+[ ] Credit customer autocomplete shows existing due amounts
+[ ] Warning shown when selecting customer with existing dues
+
+------------------------------------------------------------
+5. RETURNS
+------------------------------------------------------------
+[ ] From POS recent sales: click ↩ return button
+[ ] Returns module opens pre-filled with invoice
+[ ] Returns/sale_return.php: select items + quantities to return
+[ ] Complete return — batches.remaining_quantity restored
+[ ] sale_returns table has new record
+[ ] Cashbook has debit entry for refund
+
+------------------------------------------------------------
+6. INVOICE PDF (A4)
+------------------------------------------------------------
+[ ] From POS modal (after confirming sale): click "A4" button
+[ ] A4 invoice opens in new tab — shows all sale details
+[ ] Company logo/name/address correct (from company_settings)
+[ ] Credit sale shows credit alert box with due date
+[ ] FEFO×N badge visible on multi-batch items
+[ ] Batch+expiry columns visible when showBatch=on
+[ ] Totals: subtotal / discount / tax / grand total / paid / balance
+[ ] Signature row visible
+[ ] Footer text from company_settings
+
+------------------------------------------------------------
+7. INVOICE PRINT (THERMAL)
+------------------------------------------------------------
+[ ] From POS modal: click "Thermal" button (after sale)
+[ ] Thermal 80mm invoice opens
+[ ] From POS recent sales: click invoice name → opens thermal
+[ ] "A4 / PDF" button visible on thermal page → opens A4
+[ ] From sales/view.php: three buttons — Thermal, A4, Download PDF
+[ ] From sales/list.php: modal has Thermal / A4 / PDF buttons
+[ ] Auto-print triggered when opened with &print=1
+
+------------------------------------------------------------
+8. QUICK REGRESSION
+------------------------------------------------------------
+[ ] Cash sale still works end-to-end
+[ ] Barcode scan still adds correct product to cart
+[ ] Cart quantity limits respected (cannot exceed stock)
+[ ] New Sale button clears cart correctly
+[ ] Auto-save / restore cart still works
+[ ] Dashboard stats update after sale
+
+------------------------------------------------------------
+SQL VERIFICATION QUERIES
+------------------------------------------------------------
+-- Check FEFO snapshot stored in sale_items
+SELECT si.id, si.product_id, si.batch_id, si.quantity,
+       si.batch_number, si.expiry_date, b.expiry_date AS b_expiry
+FROM sale_items si
+LEFT JOIN batches b ON b.id = si.batch_id
+ORDER BY si.id DESC LIMIT 20;
+
+-- Check multi-batch FEFO split for one sale
+SELECT si.id, si.product_id, si.batch_id, si.batch_number,
+       si.expiry_date, si.quantity, si.unit_price, si.total
+FROM sale_items si
+WHERE si.sale_id = <SALE_ID>
+ORDER BY si.expiry_date ASC, si.id ASC;
+
+-- Check partial payment credit record
+SELECT s.invoice_no, s.payment_status, s.paid_amount,
+       cc.total_amount AS credit_balance, cc.due_date, cc.status
+FROM sales s
+LEFT JOIN customer_credits cc ON cc.sale_id = s.id
+WHERE s.payment_status IN ('partial','pending')
+ORDER BY s.id DESC LIMIT 10;
