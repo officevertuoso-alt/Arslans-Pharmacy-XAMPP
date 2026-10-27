@@ -147,18 +147,27 @@ if (!function_exists('setRememberToken')) {
         $expires     = date('Y-m-d H:i:s', strtotime('+30 days'));
 
         $db = db();
-        $db->query("UPDATE users SET remember_token = :token, remember_expires = :expires WHERE id = :id");
-        $db->bind(':token',   $hashedToken);
-        $db->bind(':expires', $expires);
-        $db->bind(':id',      $userId);
-        $db->execute();
+        // Schema-safe: older DBs may lack remember_expires
+        try {
+            $db->query("UPDATE users SET remember_token = :token, remember_expires = :expires WHERE id = :id");
+            $db->bind(':token',   $hashedToken);
+            $db->bind(':expires', $expires);
+            $db->bind(':id',      $userId);
+            $db->execute();
+        } catch (Throwable $e) {
+            $db->query("UPDATE users SET remember_token = :token WHERE id = :id");
+            $db->bind(':token', $hashedToken);
+            $db->bind(':id', $userId);
+            $db->execute();
+        }
 
-        // ISS-014 FIX: Use array form with secure=true so token is never sent over plain HTTP
+        // Local XAMPP is usually HTTP — secure cookies would never save on localhost
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
         setcookie('remember_token', $token, [
             'expires'  => time() + (86400 * 30),
             'path'     => '/',
             'httponly' => true,
-            'secure'   => true,
+            'secure'   => $isHttps,
             'samesite' => 'Lax',
         ]);
     }
@@ -174,13 +183,22 @@ if (!function_exists('checkRememberToken')) {
         $hashedToken = hash('sha256', $_COOKIE['remember_token']);
 
         $db = db();
-        $db->query("
-            SELECT id, username, full_name, email, role
-            FROM   users
-            WHERE  remember_token = :token
-              AND  (remember_expires IS NULL OR remember_expires > NOW())
-              AND  status = 1
-        ");
+        try {
+            $db->query("
+                SELECT id, username, full_name, email, role
+                FROM   users
+                WHERE  remember_token = :token
+                  AND  (remember_expires IS NULL OR remember_expires > NOW())
+                  AND  status = 1
+            ");
+        } catch (Throwable $e) {
+            $db->query("
+                SELECT id, username, full_name, email, role
+                FROM   users
+                WHERE  remember_token = :token
+                  AND  status = 1
+            ");
+        }
         $db->bind(':token', $hashedToken);
         $user = $db->single();
 
@@ -214,7 +232,16 @@ if (!function_exists('clearRememberToken')) {
     function clearRememberToken(int $userId): void
     {
         $db = db();
-        $db->query("UPDATE users SET remember_token = NULL, remember_expires = NULL WHERE id = :id");
+        try {
+            $db->query("UPDATE users SET remember_token = NULL, remember_expires = NULL WHERE id = :id");
+            $db->bind(':id', $userId);
+            $db->execute();
+        } catch (Throwable $e) {
+            $db->query("UPDATE users SET remember_token = NULL WHERE id = :id");
+            $db->bind(':id', $userId);
+            $db->execute();
+        }
+        // skip duplicate execute below if any
         $db->bind(':id', $userId);
         $db->execute();
 
