@@ -34,10 +34,14 @@ Allow from all
     Require all denied
 </FilesMatch>
 
-# ── Block install.php in production ──────────────────────────────────────────
-<Files "install.php">
-    Require all denied
-</Files>
+# ── install.php: do NOT blanket-deny here ────────────────────────────────────
+# Apache runs this BEFORE PHP. A total "Require all denied" blocks first-time
+# local install in the browser. install.php already has a PHP localhost IP lock.
+# After successful install, DELETE install.php from the server.
+# Optional hard lock (uncomment only AFTER install is done):
+# <Files "install.php">
+#     Require all denied
+# </Files>
 
 # ── URL redirects ─────────────────────────────────────────────────────────────
 RedirectMatch 301 ^/auth/forgot-password\.php$ /auth/forgot_password.php
