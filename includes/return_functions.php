@@ -421,7 +421,7 @@ function getSaleReturnDetails($return_id) {
                 u.full_name as returned_by_name
          FROM sale_returns sr
          JOIN sales s       ON sr.sale_id     = s.id
-         LEFT JOIN users u  ON sr.returned_by = u.id
+         LEFT JOIN users u  ON sr.created_by = u.id
          WHERE sr.id = :rid",
         [':rid' => $return_id]
     );
@@ -488,7 +488,7 @@ function getPurchaseReturnDetails($return_id) {
          JOIN purchase_items pi ON pr.purchase_item_id = pi.id
          JOIN products prod ON pi.product_id          = prod.id
          LEFT JOIN batches b ON pr.batch_id            = b.id
-         LEFT JOIN users u  ON pr.returned_by          = u.id
+         LEFT JOIN users u  ON pr.created_by          = u.id
          WHERE pr.id = :rid",
         [':rid' => $return_id]
     );
@@ -549,7 +549,7 @@ function getAllSaleReturns(array $filters = [], int $page = 1, int $perPage = 20
          LEFT JOIN sale_items si   ON sr.sale_item_id = si.id
          LEFT JOIN products p      ON si.product_id   = p.id
          LEFT JOIN batches b       ON sr.batch_id     = b.id
-         LEFT JOIN users u         ON sr.returned_by  = u.id
+         LEFT JOIN users u         ON sr.created_by  = u.id
          LEFT JOIN cashbook cb     ON cb.reference_id = sr.id
                                   AND cb.reference_type = 'sale_return'
          WHERE {$where}
@@ -639,7 +639,7 @@ function getAllPurchaseReturns(
          LEFT JOIN purchase_items pi2   ON pr.purchase_item_id  = pi2.id
          LEFT JOIN products pi_prod     ON pi2.product_id       = pi_prod.id
          LEFT JOIN batches b            ON pr.batch_id          = b.id
-         LEFT JOIN users u              ON pr.returned_by       = u.id
+         LEFT JOIN users u              ON pr.created_by       = u.id
          LEFT JOIN cashbook cb          ON cb.reference_id      = pr.id
                                        AND cb.reference_type    = 'purchase_return'
          WHERE {$where}
@@ -731,7 +731,7 @@ function processSaleReturn($saleId, $items, $reason) {
 
             $pdo->prepare(
                 "INSERT INTO sale_returns
-                    (return_no, sale_id, sale_item_id, batch_id, quantity, unit_price, total_amount, reason, refund_method, returned_by)
+                    (return_no, sale_id, sale_item_id, batch_id, quantity, unit_price, total_amount, reason, refund_method, created_by)
                  VALUES (:rno, :sid, :siid, :bid, :qty, :up, :ta, :reason, 'cash', :uid)"
             )->execute([
                 ':rno'    => $returnNo,
@@ -830,7 +830,7 @@ function processPurchaseReturn($purchaseId, $items, $reason) {
 
             $pdo->prepare(
                 "INSERT INTO purchase_returns
-                    (return_no, purchase_id, purchase_item_id, batch_id, quantity, unit_price, total_amount, reason, refund_method, returned_by)
+                    (return_no, purchase_id, purchase_item_id, batch_id, quantity, unit_price, total_amount, reason, refund_method, created_by)
                  VALUES (:rno, :pid, :piid, :bid, :qty, :up, :ta, :reason, 'cash', :uid)"
             )->execute([
                 ':rno'    => $returnNo,
