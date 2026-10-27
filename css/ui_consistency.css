@@ -1,0 +1,127 @@
+/* ============================================================
+   Arslan Pharmacy — UI consistency + zoom-friendly layout
+   Load AFTER style.css
+   ============================================================ */
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, "Noto Nastaliq Urdu", sans-serif !important;
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+/* Unified sidebar look across all pages */
+.sidebar,
+aside.sidebar,
+#sidebar,
+.main-sidebar {
+  background: var(--pharmacy-sidebar, #1e293b) !important;
+  color: var(--pharmacy-sidebar-text, #e2e8f0) !important;
+  border-right: 1px solid rgba(255,255,255,.06);
+}
+
+.sidebar .nav-link,
+.sidebar a {
+  color: rgba(226, 232, 240, 0.88) !important;
+  border-radius: 8px;
+  margin: 2px 8px;
+  padding: 0.55rem 0.85rem !important;
+}
+
+.sidebar .nav-link:hover,
+.sidebar a:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: #fff !important;
+}
+
+.sidebar .nav-link.active,
+.sidebar a.active {
+  background: var(--pharmacy-primary, #0d9488) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+/* Main content — stable when browser zoom 80%–125% */
+.main-content,
+.content-wrapper,
+.page-content,
+#content,
+.container-fluid {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.card, .stat-card, .panel, .box {
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04) !important;
+  border: 1px solid rgba(0,0,0,.05) !important;
+}
+
+/* Tables: horizontal scroll instead of crushing columns */
+.table-responsive,
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  min-width: 640px;
+}
+
+.table th {
+  white-space: nowrap;
+  font-size: 0.8rem;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  opacity: .85;
+}
+
+.table td {
+  vertical-align: middle;
+  font-size: 0.925rem;
+}
+
+/* Forms readable */
+.form-control, .form-select, input.form-control, select.form-select {
+  min-height: 2.4rem;
+  border-radius: 8px !important;
+}
+
+.btn {
+  border-radius: 8px !important;
+  font-weight: 600;
+}
+
+/* Top bar consistent */
+.navbar, .top-navbar, .topbar {
+  background: var(--pharmacy-navbar-bg, #fff) !important;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+/* Avoid layout explode at high zoom */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prefer 100% zoom — still usable at 90–110% */
+@media (max-width: 992px) {
+  .sidebar {
+    z-index: 1040;
+  }
+  .table {
+    min-width: 520px;
+  }
+}
+
+/* Print */
+@media print {
+  .sidebar, .navbar, .topbar { display: none !important; }
+  .main-content { margin: 0 !important; width: 100% !important; }
+}
